@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([string]$PythonExecutable = '')
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -15,11 +15,16 @@ if (Test-Path -LiteralPath $venvRoot) {
 
 Push-Location $projectRoot
 try {
-    & py -3.12 -m venv $venvRoot
+    if ($PythonExecutable) {
+        & $PythonExecutable -m venv $venvRoot
+    }
+    else {
+        & py -3.12 -m venv $venvRoot
+    }
     if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed.' }
     $buildPython = Join-Path $venvRoot 'Scripts\python.exe'
-    & $buildPython -c "import struct; assert struct.calcsize('P') == 8, 'Use 64-bit Python'"
-    if ($LASTEXITCODE -ne 0) { throw 'A 64-bit Python installation is required.' }
+    & $buildPython -c "import struct,sys; assert struct.calcsize('P') == 8 and sys.version_info[:2] == (3,12), 'Use 64-bit Python 3.12'"
+    if ($LASTEXITCODE -ne 0) { throw 'A 64-bit Python 3.12 installation is required.' }
     & $buildPython -m pip install -r (Join-Path $PSScriptRoot 'requirements-build.txt')
     if ($LASTEXITCODE -ne 0) { throw 'Build dependency installation failed.' }
     & $buildPython -m pip install --no-deps --no-build-isolation .
@@ -38,11 +43,15 @@ try {
         --add-data ('{0}:licenses' -f $licenseRoot) (Join-Path $PSScriptRoot 'launcher.py')
     if ($LASTEXITCODE -ne 0) { throw 'Executable build failed.' }
 
+    & $buildPython (Join-Path $PSScriptRoot 'smoke_test.py') (Join-Path $distRoot 'Mathechan.exe') --timeout 60
+    if ($LASTEXITCODE -ne 0) { throw 'Executable smoke tests failed.' }
     Copy-Item -LiteralPath $licenseRoot -Destination (Join-Path $distRoot 'licenses') -Recurse -Force
     & $buildPython -m pip list --format=freeze | Set-Content -LiteralPath (Join-Path $distRoot 'build-environment.txt') -Encoding utf8
     if ($LASTEXITCODE -ne 0) { throw 'Environment recording failed.' }
     & $buildPython -VV | Add-Content -LiteralPath (Join-Path $distRoot 'build-environment.txt') -Encoding utf8
-    Write-Output 'Built dist/Mathechan.exe. Verify the executable on a separate Windows installation before publishing.'
+    Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $distRoot 'Mathechan.exe') |
+        Format-List | Out-String | Set-Content -LiteralPath (Join-Path $distRoot 'SHA256.txt') -Encoding utf8
+    Write-Output 'Built and smoke-tested dist/Mathechan.exe. Separate clean-Windows validation remains required before publishing.'
 }
 finally {
     Pop-Location

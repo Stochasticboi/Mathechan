@@ -14,6 +14,22 @@ ALLOWED = {'.gitattributes', '.github', '.gitignore', 'MANIFEST.in', 'CHANGELOG.
            'pyproject.toml', 'scripts', 'src', 'tests'}
 
 
+def local_link_error(document, target, root=ROOT):
+    """Check a local target after decoding and resolving symlinks inside root."""
+    target = unquote(target.split('#', 1)[0])
+    if not target:
+        return None
+    try:
+        resolved = (document.parent / target).resolve()
+        if not resolved.is_relative_to(root.resolve()):
+            return f'link leaves repository: {target}'
+        if not resolved.exists():
+            return f'broken link {target}'
+    except (OSError, RuntimeError, ValueError):
+        return f'invalid local link: {target}'
+    return None
+
+
 def main():
     errors = []
     for path in ROOT.iterdir():
@@ -35,9 +51,9 @@ def main():
         for target in re.findall(r'\]\(([^\s)]+)\)', content):
             if '://' in target or target.startswith(('#', 'mailto:')):
                 continue
-            target = unquote(target.split('#', 1)[0])
-            if target and not (path.parent / target).resolve().exists():
-                errors.append(f'{path.relative_to(ROOT)}: broken link {target}')
+            error = local_link_error(path, target)
+            if error:
+                errors.append(f'{path.relative_to(ROOT)}: {error}')
     for path in ROOT.rglob('*.toml'):
         if not set(path.relative_to(ROOT).parts) & SKIP:
             try:
