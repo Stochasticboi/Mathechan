@@ -7,11 +7,64 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from mathechan.notebook import (NotebookError, load_notebook, new_cell, new_notebook,
+from mathechan.notebook import (MAX_BYTES, NotebookError, load_notebook, new_cell, new_notebook,
                                 save_notebook, validate_notebook)
 
 
 class NotebookTests(unittest.TestCase):
+    def notebook_at_byte_limit(self):
+        document = new_notebook()
+        document["cells"] = [new_cell("x" * 100_000) for _ in range(19)]
+        document["cells"][0]["source"] = "ñ" + "x" * 99_999
+        document["cells"].append(new_cell(""))
+        size = len((json.dumps(document, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8"))
+        document["cells"][-1]["source"] = "x" * (MAX_BYTES - size)
+        return document
+
+    def test_saved_notebook_at_exact_byte_limit_can_be_reopened(self):
+        document = self.notebook_at_byte_limit()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "boundary.mchan"
+            save_notebook(document, path)
+            content = path.read_bytes()
+            self.assertEqual(len(content), MAX_BYTES)
+            self.assertNotIn(b"\r\n", content)
+            self.assertIn("ñ".encode("utf-8"), content)
+            self.assertEqual(load_notebook(path), document)
+
+    def test_oversized_save_leaves_existing_file_unchanged(self):
+        document = self.notebook_at_byte_limit()
+        document["cells"][-1]["source"] += "x"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "existing.mchan"
+            path.write_bytes(b"original")
+            self.assertRaises(NotebookError, save_notebook, document, path)
+            self.assertEqual(path.read_bytes(), b"original")
+
+    def test_oversized_load_checks_actual_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "oversized.mchan"
+            path.write_bytes(b" " * (MAX_BYTES + 1))
+            with self.assertRaisesRegex(NotebookError, "2 MB"):
+                load_notebook(path)
+
+    def test_json_integer_conversion_error_is_a_notebook_error(self):
+        # The decoder can raise ValueError before schema validation, depending
+        # on Python's integer-conversion limit. Neither case may leak it.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "integer.mchan"
+            path.write_text('{"unexpected":' + "1" * 4301 + "}", encoding="utf-8")
+            with self.assertRaises(NotebookError):
+                load_notebook(path)
+
+    def test_decoder_value_error_is_normalized_without_changing_integer_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "invalid.mchan"
+            path.write_text("{}", encoding="utf-8")
+            with patch("mathechan.notebook.json.loads", side_effect=ValueError("integer conversion limit")):
+                with self.assertRaisesRegex(NotebookError, "JSON no válido"):
+                    load_notebook(path)
+
     def test_roundtrip_without_evaluation(self):
         document = new_notebook()
         document["cells"].append(new_cell("D[x^3,x]"))

@@ -98,22 +98,25 @@ def invalid_constant(value):
 
 
 def load_notebook(path):
-    """Lee datos JSON; source y results permanecen inertes."""
-    path = Path(path)
-    if path.stat().st_size > MAX_BYTES:
+    """Lee hasta el límite de bytes UTF-8; source y results permanecen inertes."""
+    with Path(path).open("rb") as stream:
+        content = stream.read(MAX_BYTES + 1)
+    if len(content) > MAX_BYTES:
         raise NotebookError("El cuaderno excede 2 MB.")
     try:
-        document = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=no_duplicate_keys,
+        document = json.loads(content.decode("utf-8"), object_pairs_hook=no_duplicate_keys,
                               parse_constant=invalid_constant)
         return validate_notebook(document)
-    except (json.JSONDecodeError, UnicodeError, RecursionError) as error:
+    except NotebookError:
+        raise
+    except (ValueError, UnicodeError, RecursionError) as error:
         raise NotebookError(f"JSON no válido: {error}") from error
 
 
 def save_notebook(document, path):
-    """Guarda un documento validado; no evalúa sus celdas."""
+    """Guarda UTF-8 con LF, contando exactamente los bytes que se escriben."""
     validated = validate_notebook(document)
-    content = json.dumps(validated, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
-    if len(content.encode("utf-8")) > MAX_BYTES:
+    content = (json.dumps(validated, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    if len(content) > MAX_BYTES:
         raise NotebookError("El cuaderno excede 2 MB.")
-    Path(path).write_text(content, encoding="utf-8")
+    Path(path).write_bytes(content)
