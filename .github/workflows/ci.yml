@@ -19,3 +19,26 @@ jobs:
       - run: python -m pip install -e .
       - run: python -m unittest discover -s tests -v
       - run: python scripts/check_repository.py
+  windows-distribution:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Build and verify Windows executable
+        shell: pwsh
+        run: |
+          $pythonExecutable = Join-Path $env:pythonLocation 'python.exe'
+          .\packaging\windows\build.ps1 -PythonExecutable $pythonExecutable
+      - name: Upload verified console distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mathechan-windows-x64
+          if-no-files-found: error
+          path: |
+            dist/Mathechan.exe
+            dist/licenses/
+            dist/build-environment.txt
+            dist/SHA256.txt
