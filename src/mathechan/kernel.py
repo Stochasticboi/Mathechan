@@ -8,6 +8,9 @@ import re
 
 import sympy as sp
 
+from .domains import condition_text, require_nonzero, restrictions_at
+from .printer import expression_input
+
 
 class MathechanError(ValueError):
     """Entrada fuera del lenguaje experimental o del dominio admitido."""
@@ -27,10 +30,14 @@ class EvaluationResult:
     latex: str = ""
     svg: str = ""
     points: tuple = ()
+    input: str | None = None
+    conditions: tuple = ()
+    warnings: tuple = ()
 
     def to_dict(self):
         """Devuelve contenido serializable para una interfaz futura."""
-        result = {"kind": self.kind, "text": self.text}
+        result = {"kind": self.kind, "text": self.text, "input": self.input,
+                  "conditions": list(self.conditions), "warnings": list(self.warnings)}
         if self.latex:
             result["latex"] = self.latex
         if self.svg:
@@ -129,7 +136,7 @@ FUNCTIONS = {
 }
 
 
-def build(node):
+def build(node, restrictions=None):
     """Traduce nodos propios; nunca interpreta cadenas como código."""
     if node.kind == "number":
         rational = Fraction(node.value)
@@ -137,10 +144,10 @@ def build(node):
     if node.kind == "name":
         return {"Pi": sp.pi, "E": sp.E}.get(node.value, sp.Symbol(node.value))
     if node.kind == "unary":
-        value = build(node.children[0])
+        value = build(node.children[0], restrictions)
         return value if node.value == "+" else -value
     if node.kind == "binary":
-        left, right = (build(child) for child in node.children)
+        left, right = (build(child, restrictions) for child in node.children)
         if node.value == "+":
             return left + right
         if node.value == "-":
@@ -150,15 +157,18 @@ def build(node):
         if node.value == "/":
             if right == 0:
                 raise MathechanError("División por cero.")
+            require_nonzero(right, restrictions)
             return left / right
         if right.is_number and (right.is_real is not True or abs(right) > 1000):
             raise MathechanError("Exponente numérico fuera del límite experimental ±1000.")
+        if right.is_negative is True:
+            require_nonzero(left, restrictions)
         return left ** right
     if node.kind == "call":
         if node.value == "D":
             if len(node.children) != 2:
                 raise MathechanError("D requiere exactamente dos argumentos: D[expresión, variable].")
-            expression, variable = (build(child) for child in node.children)
+            expression, variable = (build(child, restrictions) for child in node.children)
             if not isinstance(variable, sp.Symbol):
                 raise MathechanError("El segundo argumento de D debe ser un símbolo.")
             return sp.diff(expression, variable)
@@ -166,32 +176,44 @@ def build(node):
             raise MathechanError(f"Función no admitida: {node.value}.")
         if len(node.children) != 1:
             raise MathechanError(f"{node.value} requiere exactamente un argumento.")
-        return FUNCTIONS[node.value](build(node.children[0]))
+        return FUNCTIONS[node.value](build(node.children[0], restrictions))
     raise MathechanError("Las listas solo se admiten como rango de Plot.")
 
 
-def plot(node):
+def plot(node, source=None):
     if len(node.children) != 2:
         raise MathechanError("Use Plot[expresión, {variable, mínimo, máximo}].")
     range_node = node.children[1]
     if range_node.kind != "list" or len(range_node.children) != 3:
         raise MathechanError("Plot requiere un rango {variable, mínimo, máximo}.")
-    expression = build(node.children[0])
-    variable, lower, upper = (build(child) for child in range_node.children)
+    restrictions = []
+    expression = build(node.children[0], restrictions)
+    variable, lower, upper = (build(child, restrictions) for child in range_node.children)
     if not isinstance(variable, sp.Symbol) or expression.free_symbols - {variable}:
         raise MathechanError("Plot requiere una sola variable libre y un símbolo como variable.")
+    if any(item.free_symbols - {variable} for item in restrictions):
+        raise MathechanError("Plot no puede comprobar condiciones con variables adicionales.")
     if any(bound.is_real is not True or bound.is_finite is not True for bound in (lower, upper)):
         raise MathechanError("Los extremos deben ser reales finitos.")
     low, high = float(lower), float(upper)
     if not math.isfinite(low) or not math.isfinite(high) or not math.isfinite(high - low) or low >= high:
         raise MathechanError("El rango debe ser finito y estrictamente creciente.")
     points = []
+    constant_value = expression.evalf() if expression.is_number else None
     for index in range(201):
         fraction = index / 200
         x = low if index == 0 else high if index == 200 else low + (high - low) * fraction
         if not math.isfinite(x):
             raise MathechanError("Una muestra del rango excedió el rango numérico admitido.")
-        value = expression.subs(variable, sp.Float(x)).evalf()
+        sample = sp.Float(x)
+        domain_sample = lower if index == 0 else upper if index == 200 else sample
+        coordinate = x if 0 < index < 200 else None
+        diagnostic = restrictions_at(restrictions, variable, domain_sample, coordinate)
+        if diagnostic:
+            raise MathechanError(f"{diagnostic} cerca de {x:g}.")
+        value = constant_value if constant_value is not None else expression.subs(variable, sample)
+        if not isinstance(value, (sp.Float, sp.Rational)):
+            value = value.evalf()
         if value.is_real is not True or value.is_finite is not True:
             raise MathechanError(f"Plot encontró un valor fuera del dominio real finito cerca de {x:g}.")
         y = float(value)
@@ -220,7 +242,20 @@ def plot(node):
            '<path d="M40 40 V280 H600" fill="none" stroke="#475569"/>'
            f'<polyline points="{coordinates}" fill="none" stroke="#2563eb" stroke-width="2"/>'
            f'<text x="40" y="315" font-size="13">{title}</text></svg>')
-    return EvaluationResult("plot", sp.sstr(expression), svg=svg, points=tuple(points))
+    return EvaluationResult("plot", sp.sstr(expression), svg=svg, points=tuple(points),
+                            input=source, conditions=condition_text(restrictions))
+
+
+def reusable_input(expression):
+    """Accept a candidate only after bounded parse/build and structural equality."""
+    candidate = expression_input(expression)
+    if candidate is None:
+        return None
+    try:
+        rebuilt = build(Parser(candidate).parse())
+        return candidate if rebuilt == expression else None
+    except (MathechanError, ArithmeticError, TypeError, ValueError, RecursionError):
+        return None
 
 
 def evaluate(source):
@@ -228,11 +263,20 @@ def evaluate(source):
     try:
         node = Parser(source).parse()
         if node.kind == "call" and node.value == "Plot":
-            return plot(node)
-        expression = build(node)
+            return plot(node, source.strip())
+        restrictions = []
+        expression = build(node, restrictions)
         if expression.has(sp.zoo, sp.nan, sp.oo, -sp.oo):
             raise MathechanError("El resultado no es finito o está indefinido.")
-        return EvaluationResult("expression", sp.sstr(expression), latex=sp.latex(expression))
+        candidate = reusable_input(expression)
+        warnings = []
+        if candidate is None:
+            warnings.append("El resultado no tiene entrada reutilizable dentro del lenguaje y límites actuales.")
+        if restrictions:
+            warnings.append("La entrada del resultado no conserva por sí sola las condiciones originales; consérvelas por separado.")
+        return EvaluationResult("expression", sp.sstr(expression), latex=sp.latex(expression),
+                                input=candidate, conditions=condition_text(restrictions),
+                                warnings=tuple(warnings))
     except MathechanError:
         raise
     except (ArithmeticError, TypeError, ValueError, RecursionError) as error:
