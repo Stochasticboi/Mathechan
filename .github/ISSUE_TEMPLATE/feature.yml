@@ -1,0 +1,25 @@
+name: Capacidad o mejora
+description: Proponer una capacidad concreta de Mathechan
+title: "[Capacidad] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que debe resolver
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Ejemplo y criterio de aceptación
+      description: Incluir entrada, resultado esperado y supuestos.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Antecedentes y referencias
+  - type: textarea
+    id: scope
+    attributes:
+      label: Alcance y limitaciones

@@ -1,0 +1,28 @@
+{
+  "format": "mathechan-notebook",
+  "version": "0.1",
+  "versions": {
+    "kernel": "0.1.0",
+    "sympy": "1.14.0"
+  },
+  "cells": [
+    {
+      "id": "intro",
+      "kind": "markdown",
+      "source": "Exploración de una gaussiana / Gaussian example. Exp[-x^2] no es una densidad normalizada / is not a normalized probability density. Abrir este archivo no ejecuta código / Opening this file does not execute code.",
+      "results": []
+    },
+    {
+      "id": "derivative",
+      "kind": "code",
+      "source": "D[Exp[-x^2], x]",
+      "results": []
+    },
+    {
+      "id": "plot",
+      "kind": "code",
+      "source": "Plot[Exp[-x^2], {x, -3, 3}]",
+      "results": []
+    }
+  ]
+}
