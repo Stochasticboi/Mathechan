@@ -1,8 +1,10 @@
 # 002 — Operaciones científicas / Scientific operations
 
 Fecha / Date: 2026-10-19.
-Estado / Status: implementado en rama de desarrollo, sin nueva release /
-implemented on the development branch, no new release.
+Estado / Status: adoptado en 0.1.1 / adopted in 0.1.1.
+La implementación inicial se preparó en una rama de desarrollo antes de la
+publicación. / The initial implementation was prepared on a development branch
+before release.
 
 ## Español
 
@@ -10,8 +12,9 @@ implemented on the development branch, no new release.
 
 Ampliar la consola con operaciones útiles para formular problemas científicos,
 sin presentar una biblioteca completa de física estadística ni compatibilidad
-general con otro sistema. La versión del paquete sigue en 0.1.0. El ZIP v0.1.0
-publicado antes de esta ampliación no adquiere estas funciones por ello.
+general con otro sistema. Estas capacidades se incorporan en 0.1.1. El ZIP
+v0.1.0 anterior conserva su alcance original. Véanse las
+[notas de versión](../es/versiones/0.1.1.md).
 
 ### Contrato de las operaciones
 
@@ -84,8 +87,8 @@ El cuaderno de ejemplo conserva solo fuentes, sin ejecutar al abrir.
 
 Extend the console with operations useful for scientific formulation, without
 claiming a complete statistical physics library or general compatibility.
-The package version remains 0.1.0. The v0.1.0 ZIP published before these additions
-does not gain branch capabilities because of that version string.
+These capabilities are included in 0.1.1. The earlier v0.1.0 ZIP retains its
+original scope. See the [release notes](../en/releases/0.1.1.md).
 
 ### Operation contracts
 

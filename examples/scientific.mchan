@@ -2,14 +2,14 @@
   "format": "mathechan-notebook",
   "version": "0.1",
   "versions": {
-    "kernel": "0.1.0",
+    "kernel": "0.1.1",
     "sympy": "1.14.0"
   },
   "cells": [
     {
       "id": "scientific-00",
       "kind": "markdown",
-      "source": "Operaciones científicas de la rama de desarrollo / Scientific operations on the development branch. Fuentes sin resultados guardados / Sources without stored results. Revisar condiciones y límites / Review conditions and limits.",
+      "source": "Operaciones científicas de Mathechan 0.1.1 / Mathechan 0.1.1 scientific operations. Fuentes sin resultados guardados / Sources without stored results. Revisar condiciones y límites / Review conditions and limits.",
       "results": []
     },
     {

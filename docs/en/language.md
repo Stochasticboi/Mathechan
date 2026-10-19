@@ -2,12 +2,12 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes the **development branch**. The package still declares
-0.1.0, but the scientific operations below are not a new release and must not
-be presumed present in the published Windows v0.1.0 ZIP. Check
-[status and downloads](../../README.en.md) before selecting a distribution.
+This document describes **Mathechan 0.1.1**. Scientific operations are included
+in this version; the earlier v0.1.0 ZIP retains its original scope. Check
+[release notes](releases/0.1.1.md) and [downloads](../../README.en.md) before
+selecting a distribution.
 
-Mathechan 0.1 provides an experimental console with its own parser and
+Mathechan 0.1.1 provides an experimental console with its own parser and
 mathematical evaluation through SymPy. Its syntax follows selected Mathematica
 conventions but does not provide general Wolfram Language compatibility.
 There is no graphical interface or visual notebook editor yet.
@@ -54,7 +54,7 @@ automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
 
-## Scientific operations under development
+## Scientific operations in 0.1.1
 
 ### Approximation, algebra, and substitution
 

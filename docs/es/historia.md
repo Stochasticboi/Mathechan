@@ -14,6 +14,11 @@ consola; la aplicación de escritorio pertenece al desarrollo previsto.
 La sintaxis familiar y la integración de cálculo y gráficos toman a Mathematica
 como referencia técnica, sin plantear una réplica completa.
 
+El 19 de octubre de 2026, la versión 0.1.1 amplió la consola con evaluación
+numérica de precisión configurable, álgebra racional, sustitución, sumas finitas,
+integración y resolución de ecuaciones y EDO de alcance acotado. Sus
+[notas de versión](versiones/0.1.1.md) documentan capacidades y límites.
+
 ## Mathematica como antecedente
 
 La siguiente selección recoge hitos relevantes para el proyecto. Las fechas

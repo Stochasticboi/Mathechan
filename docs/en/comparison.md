@@ -3,11 +3,10 @@
 [Español](../es/comparativa.md) · [Home](../../README.en.md)
 
 Mathematica is a design reference. This comparison separates its documented
-capabilities, the published **v0.1.0** distribution, and the **development branch**.
-The latter is not a new release; the package version remains 0.1.0.
-This is not a benchmark or a general compatibility claim.
+capabilities, the initial **v0.1.0** distribution, and **Mathechan 0.1.1**.
+This is not a benchmark against Mathematica or a general compatibility claim.
 
-| Area | Documented reference | v0.1.0 distribution | Development branch, no new release |
+| Area | Documented reference | v0.1.0 distribution | Mathechan 0.1.1 |
 |---|---|---|---|
 | Language | Expressions with heads and arguments. [S11](../SOURCES.md#s11) | Restricted parser and exact arithmetic. | Adds inert `==` equalities, lists of up to 64 elements, and bounded scientific operations. |
 | Kernel | Text interface. [S12](../SOURCES.md#s12) | CLI using SymPy 1.14. | Keeps stateless CLI; adds status, representational exactness, and details. |
@@ -20,11 +19,12 @@ This is not a benchmark or a general compatibility claim.
 | PDEs | Finite elements. [S10](../SOURCES.md#s10) | Pending. | Pending; current DSolve only supports one-function ODEs. |
 | Parallelism | Integrated parallel computation. [S07](../SOURCES.md#s07) | Pending. | Pending. |
 
-## Published distribution and development code
+## Differences between 0.1.0 and 0.1.1
 
 The v0.1.0 ZIP supports `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`,
-`Simplify`, `D`, and `Plot`. Keeping the same source package version does
-not make branch changes part of that distribution.
+`Simplify`, `D`, and `Plot`. That original scope is unchanged; the scientific
+operations below are included in 0.1.1. See the
+[release notes](releases/0.1.1.md).
 
 The new block supports requested precision from 1 to 1000 digits, rational
 algebra over Q, and exact substitution with transported restrictions. Sums use

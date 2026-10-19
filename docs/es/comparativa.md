@@ -3,11 +3,10 @@
 [English](../en/comparison.md) · [Inicio](../../README.md)
 
 Mathematica es una referencia de diseño. Esta comparación separa sus capacidades
-documentadas, la distribución publicada **v0.1.0** y la **rama de desarrollo**.
-Esta última aún no constituye nueva release; la versión del paquete sigue en
-0.1.0. No se presenta un benchmark ni una compatibilidad general.
+documentadas, la distribución inicial **v0.1.0** y **Mathechan 0.1.1**.
+No se presenta un benchmark contra Mathematica ni una compatibilidad general.
 
-| Área | Referencia documentada | Distribución v0.1.0 | Rama de desarrollo, sin release nueva |
+| Área | Referencia documentada | Distribución v0.1.0 | Mathechan 0.1.1 |
 |---|---|---|---|
 | Lenguaje | Expresiones con cabeza y argumentos. [S11](../SOURCES.md#s11) | Parser restringido y aritmética exacta. | Añade igualdades inertes `==`, listas de hasta 64 elementos y operaciones científicas acotadas. |
 | Núcleo | Interfaz textual. [S12](../SOURCES.md#s12) | CLI mediante SymPy 1.14. | Mantiene CLI sin sesión persistente; añade estado, exactitud representacional y detalles. |
@@ -20,11 +19,12 @@ Esta última aún no constituye nueva release; la versión del paquete sigue en
 | EDP | Elementos finitos. [S10](../SOURCES.md#s10) | Pendiente. | Pendiente; DSolve actual solo admite EDO para una función. |
 | Paralelismo | Cálculo paralelo integrado. [S07](../SOURCES.md#s07) | Pendiente. | Pendiente. |
 
-## Distribución publicada y código en desarrollo
+## Diferencias entre 0.1.0 y 0.1.1
 
 El ZIP v0.1.0 admite `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`,
-`Simplify`, `D` y `Plot`. No debe suponerse que incorpora los cambios de
-la rama por mantener esta la misma versión de paquete.
+`Simplify`, `D` y `Plot`. Conserva ese alcance original; las operaciones
+científicas siguientes se incorporan en 0.1.1. Véanse las
+[notas de versión](versiones/0.1.1.md).
 
 El bloque nuevo admite precisión solicitada de 1 a 1000 dígitos, álgebra racional
 sobre Q y sustitución exacta con restricciones transportadas. Las sumas tienen

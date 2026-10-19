@@ -14,6 +14,11 @@ prototype; the desktop application belongs to the planned development.
 Familiar syntax and the integration of calculation and plotting take Mathematica
 as a technical reference, without proposing a complete replica.
 
+On 19 October 2026, version 0.1.1 extended the console with configurable-precision
+numerical evaluation, rational algebra, substitution, finite sums, integration,
+and bounded algebraic/ODE solving. Its [release notes](releases/0.1.1.md)
+describe the capabilities and limitations.
+
 ## Mathematica as a reference
 
 The following selection covers milestones relevant to the project. Monthly
