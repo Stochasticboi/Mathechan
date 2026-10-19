@@ -43,7 +43,7 @@ try {
         --add-data ('{0}:licenses' -f $licenseRoot) (Join-Path $PSScriptRoot 'launcher.py')
     if ($LASTEXITCODE -ne 0) { throw 'Executable build failed.' }
 
-    & $buildPython (Join-Path $PSScriptRoot 'smoke_test.py') (Join-Path $distRoot 'Mathechan.exe') --timeout 60
+    & $buildPython (Join-Path $PSScriptRoot 'smoke_test.py') (Join-Path $distRoot 'Mathechan.exe') --timeout 60 --scientific
     if ($LASTEXITCODE -ne 0) { throw 'Executable smoke tests failed.' }
     Copy-Item -LiteralPath $licenseRoot -Destination (Join-Path $distRoot 'licenses') -Recurse -Force
     & $buildPython -m pip list --format=freeze | Set-Content -LiteralPath (Join-Path $distRoot 'build-environment.txt') -Encoding utf8

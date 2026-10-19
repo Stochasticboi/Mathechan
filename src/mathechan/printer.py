@@ -55,7 +55,11 @@ def _write(expression, depth):
     if len(expression.args) > 256:
         raise UnrepresentableExpression("Too many arguments.")
     write = lambda item: _write(item, depth + 1)
-    if isinstance(expression, sp.Add):
+    if isinstance(expression, sp.Equality):
+        result = f"({write(expression.lhs)})==({write(expression.rhs)})"
+    elif isinstance(expression, sp.Tuple):
+        result = "{" + ",".join(write(item) for item in expression) + "}"
+    elif isinstance(expression, sp.Add):
         result = "(" + "+".join(write(item) for item in expression.args) + ")"
     elif isinstance(expression, sp.Mul):
         result = "(" + "*".join(write(item) for item in expression.args) + ")"

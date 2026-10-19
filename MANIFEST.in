@@ -3,4 +3,5 @@ recursive-include docs *.md
 recursive-include examples *.mchan *.svg
 recursive-include packaging *.py *.ps1 *.txt *.md
 recursive-include scripts *.py
+recursive-include benchmarks *.py *.md
 recursive-include tests *.py

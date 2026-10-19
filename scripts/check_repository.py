@@ -7,11 +7,11 @@ import tomllib
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP = {'.git', '.venv', '.venv-build', 'work', 'build', 'dist', '__pycache__'}
+SKIP = {'.git', '.venv', '.venv-build', 'work', 'build', 'dist', '__pycache__', '.ruff_cache'}
 ALLOWED = {'.gitattributes', '.github', '.gitignore', 'MANIFEST.in', 'CHANGELOG.md',
            'CONTRIBUTING.md', 'LICENSE', 'README.md', 'README.en.md',
            'THIRD_PARTY_NOTICES.md', 'docs', 'examples', 'packaging',
-           'pyproject.toml', 'scripts', 'src', 'tests'}
+           'pyproject.toml', 'scripts', 'src', 'tests', 'benchmarks'}
 
 
 def local_link_error(document, target, root=ROOT):

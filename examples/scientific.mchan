@@ -1,0 +1,70 @@
+{
+  "format": "mathechan-notebook",
+  "version": "0.1",
+  "versions": {
+    "kernel": "0.1.0",
+    "sympy": "1.14.0"
+  },
+  "cells": [
+    {
+      "id": "scientific-00",
+      "kind": "markdown",
+      "source": "Operaciones científicas de la rama de desarrollo / Scientific operations on the development branch. Fuentes sin resultados guardados / Sources without stored results. Revisar condiciones y límites / Review conditions and limits.",
+      "results": []
+    },
+    {
+      "id": "scientific-01",
+      "kind": "code",
+      "source": "N[Pi,50]",
+      "results": []
+    },
+    {
+      "id": "scientific-02",
+      "kind": "code",
+      "source": "Factor[x^2-1]",
+      "results": []
+    },
+    {
+      "id": "scientific-03",
+      "kind": "code",
+      "source": "Together[1/x+1/(x+1)]",
+      "results": []
+    },
+    {
+      "id": "scientific-04",
+      "kind": "code",
+      "source": "Cancel[(x^2-1)/(x-1)]",
+      "results": []
+    },
+    {
+      "id": "scientific-05",
+      "kind": "code",
+      "source": "Substitute[x^2+y,x,1/3]",
+      "results": []
+    },
+    {
+      "id": "scientific-06",
+      "kind": "code",
+      "source": "Sum[n^2,{n,1,10}]",
+      "results": []
+    },
+    {
+      "id": "scientific-07",
+      "kind": "code",
+      "source": "Integrate[Exp[-x^2],{x,-Infinity,Infinity}]",
+      "results": []
+    },
+    {
+      "id": "scientific-08",
+      "kind": "code",
+      "source": "Solve[x^2==2,x,Reals]",
+      "results": []
+    },
+    {
+      "id": "scientific-09",
+      "kind": "code",
+      "source": "DSolve[{D[y[x],x]==-y[x],y[0]==1},y[x],x]",
+      "results": []
+    }
+  ]
+}

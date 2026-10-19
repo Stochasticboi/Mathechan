@@ -22,6 +22,8 @@ def print_conditions(result, stream=None):
         print("Condiciones / Conditions: " + "; ".join(result.conditions), file=stream)
     for warning in result.warnings:
         print("Aviso / Warning: " + warning, file=stream)
+    if result.status not in ("evaluated", "approximate", "verified", "solved"):
+        print("Estado / Status: " + result.status, file=stream)
 
 
 def main(argv=None):
@@ -58,7 +60,7 @@ def main(argv=None):
             for source, result in results:
                 if args.demo:
                     print(f"> {source}")
-                print(result.text if result.kind == "expression" else f"Plot: {result.text} (201 muestras)")
+                print(f"Plot: {result.text} (201 muestras)" if result.kind == "plot" else result.text)
                 print_conditions(result)
             if args.output:
                 print(f"SVG: {args.output}")

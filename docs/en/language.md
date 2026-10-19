@@ -2,6 +2,11 @@
 
 [Español](../es/lenguaje.md)
 
+This document describes the **development branch**. The package still declares
+0.1.0, but the scientific operations below are not a new release and must not
+be presumed present in the published Windows v0.1.0 ZIP. Check
+[status and downloads](../../README.en.md) before selecting a distribution.
+
 Mathechan 0.1 provides an experimental console with its own parser and
 mathematical evaluation through SymPy. Its syntax follows selected Mathematica
 conventions but does not provide general Wolfram Language compatibility.
@@ -13,12 +18,14 @@ There is no graphical interface or visual notebook editor yet.
 |---|---|
 | Integers and decimals | Exact: `0.1+0.2` produces `3/10` |
 | Symbols | ASCII letters followed by letters or digits; case-sensitive |
-| Constants | `Pi`, `E` |
+| Constants | `Pi`, `E`; `Infinity` in integration bounds |
 | Operators | `+`, `-`, `*`, `/`, `^`; multiplication must be explicit |
 | Grouping | Parentheses: `(x+1)^2` |
 | Single-argument functions | `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`, `Simplify` |
 | Derivative | `D[expression, symbol]` |
 | Plot | `Plot[expression, {symbol, minimum, maximum}]`, only at the expression root |
+| Equality | `leftHandSide == rightHandSide`; an inert equation, not assignment |
+| Lists | `{a,b,...}`; up to 64 elements per list, within parser limits |
 
 Powers associate to the right: `x^2^3` means `x^(2^3)`. Powers take precedence
 over unary signs: `-x^2` means `-(x^2)`. Subtraction and division associate to
@@ -40,11 +47,106 @@ global `Simplify` call. Unsupported result functions, excess tokens, and numbers
 exceeding input limits yield no reusable representation. The printer does not
 promise to find the shortest possible representation.
 
-Assignments, patterns, user-defined functions, general lists, `Integrate`,
-`Solve`, units, and stateful sessions are not supported. Symbols are not
+Assignments, patterns, user-defined function definitions, units, and stateful
+sessions are not supported. Unknown functions such as `y[x]` are used within
+the bounded `DSolve` context, not as arbitrary definitions. Symbols are not
 automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
+
+## Scientific operations under development
+
+### Approximation, algebra, and substitution
+
+| Operation | Example | Current scope |
+|---|---|---|
+| `N` | `N[Pi,50]` | Numeric scalar without free symbols; 15 requested digits by default, or an integer from 1 to 1000. |
+| `Factor` | `Factor[x^2-1]` | Polynomials with rational coefficients, over Q. |
+| `Together` | `Together[1/x+1/(x+1)]` | Combines denominators of rational functions over Q. |
+| `Cancel` | `Cancel[(x^2-1)/(x-1)]` | Cancels rational factors while retaining original exclusions as conditions. |
+| `Substitute` | `Substitute[x^2+y,x,1/3]` | One exact substitution, yielding `y + 1/9`; nesting is supported. |
+
+`N` uses strict-precision evaluation and reports an error if it cannot sustain
+the requested precision. Approximate results remain `Float`, including zero;
+they are not rationalized. Requesting more digits of an existing approximation
+does not recover lost information. `details.numeric_evaluations` records the
+requested significant digits. Output containing Float has `input: null` until
+the language can preserve its approximate nature on re-entry.
+
+Factoring and rational operations are not general `Simplify`: they currently
+reject functions, Float, and irrational coefficients such as `Pi` or `Sqrt[2]`.
+Preflight accepts up to eight symbols, estimated degree 256 in numerator and
+denominator, and a conservative estimate of 4096 terms. It may reject input
+before expansion; these bounds do not guarantee execution time.
+
+`Substitute` preserves other symbols and transforms original restrictions.
+`Substitute[x/x,x,0]` is rejected; `Substitute[x/x,x,y]` retains `y != 0`.
+Only finite scalar replacement values are accepted: substituting `Infinity` is
+not taking a limit, although `Integrate` accepts it as a direct bound. Substitution
+does not undo earlier assumption-based simplification. Replacing a parameter
+may reevaluate a pending Integral and update or remove branch conditions;
+real-bound requirements are retained and transformed.
+
+### Finite sums and integration
+
+`Sum[n^2,{n,1,10}]` returns `385`. Bounds are exact, inclusive integers; an
+empty range returns zero. Each sum allows 1000 terms and an entire evaluation
+shares a 2000-term budget, including nested sums. The index is locally bound,
+can shadow an outer index, and creates no session assignment. Terms are
+evaluated with their restrictions: cancellation of a generic formula does not
+remove an excluded term.
+
+`Integrate[x^2,x]` returns an antiderivative **without an additive constant**.
+`Integrate[Exp[-x^2],{x,-Infinity,Infinity}]` returns `sqrt(pi)`.
+Definite bounds are real and independent of the variable; real infinities are
+allowed. Antiderivatives may include differentiation checks in `details`;
+returning a definite value alone is not a verification of that integral.
+
+`Piecewise` results are preserved: their conditions describe **alternative
+branches**, not requirements that must all hold simultaneously. An unevaluated
+`Integral` retains `status: "unresolved"`. Divergent branches are flagged;
+a Piecewise without pending constructs has `conditional` status.
+principal values are not requested automatically. Integrand exclusions involving
+the bound variable are recorded in `details.integrand_conditions`, rather than
+as restrictions on a free variable of the result. This does not replace general
+convergence, branch, or domain analysis.
+
+### Equations and differential equations
+
+`Solve[x^2==2,x]` uses `Complexes` by default;
+`Solve[x^2==2,x,Reals]` restricts to real solutions. Equality `==` remains an
+equation even when its sides simplify to the same expression; it is not an
+assignment. Chained equalities `a==b==c` are rejected; use a list.
+
+`Solve[{x+y==3,x-y==1},{x,y}]` returns the tuple set `{(2,1)}`.
+Up to eight equations and distinct variables are supported; systems are linear.
+Results may be empty, finite, parametrized, or conditional sets. Substitution
+residual checks and the domain appear in `details` when performed. When rank or
+degree depends on parameters, degenerate cases are not silently dropped: a
+conditional result may remain unresolved. Original denominator exclusions are
+applied to solutions; not every returned set is a reusable list.
+A real solution family subject to external restrictions may retain `conditional`
+status instead of being presented as an unconditional real set.
+
+`DSolve[D[y[x],x]==y[x],y[x],x]` supports an ordinary equation for one dependent
+function, of order 1 or 2. Higher derivatives use nested `D`. Example with data:
+
+```text
+DSolve[{D[D[y[x],x],x]+y[x]==0,y[0]==1,Substitute[D[y[x],x],x,0]==0},y[x],x]
+```
+
+One ODE and up to four initial data are accepted; incompatible or unsupported
+data are rejected. This example yields `y(x)=cos(x)`. Output may retain arbitrary
+constants, multiple branches, or an unresolved equation.
+`details.ode_residuals` and `initial_residuals` report local checks; zero residuals
+do not prove family completeness, existence/uniqueness, or a global domain.
+ODE systems and partial derivatives are not supported.
+Retained original exclusions are also checked at initial points; uncertainty
+there is not presented as unconditional verification.
+
+The [scientific.mchan](../../examples/scientific.mchan) notebook contains example
+sources without stored results. See the
+[scope decision](../decisions/002-scientific-operations.md).
 
 ## Console
 
@@ -113,10 +215,20 @@ is saved at the requested path.
 
 `from mathechan import evaluate, MathechanError`.
 `evaluate(source)` returns `EvaluationResult` with `kind`, `text`, `latex`,
-`svg`, `points`, `input`, `conditions`, and `warnings`; `to_dict()` produces
+`svg`, `points`, `input`, `conditions`, `warnings`, `status`, `exact`, and `details`;
+`to_dict()` produces
 serializable content with the new fields added. Expected errors
 raise `MathechanError`. The parser translates its own syntax tree into SymPy
 objects without interpreting input as Python code.
+
+Fields are additive. `exact` means that the returned expression contains no
+Float; it does not establish complete resolution. `status` distinguishes, among
+others, `evaluated`, `approximate`, `verified`, `unverified`, `conditional`,
+`unresolved`, and `no_solution`. Depending on the operation, `details` reports
+method, requested precision, residuals, or checks; not every result has every
+field. `conditions` retains partial necessary conditions and explicitly labelled
+branch conditions. Nested operations may propagate status and warnings;
+`exact: true` does not mean universal success.
 
 ## JSON notebooks v0.1
 
