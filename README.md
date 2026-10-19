@@ -13,7 +13,7 @@ El proyecto comenzó el **18 de octubre de 2026**, con un horizonte inicial de
 cinco años, hasta octubre de 2031. Su sintaxis toma a Mathematica como referencia,
 con una especificación propia y un alcance definido progresivamente.
 
-## Estado actual: 0.1.0 experimental
+## Distribución publicada: 0.1.0 experimental
 
 La versión actual funciona **por consola** y utiliza un parser restringido
 con evaluación mediante SymPy 1.14. Todavía no tiene interfaz gráfica.
@@ -28,6 +28,23 @@ con evaluación mediante SymPy 1.14. Todavía no tiene interfaz gráfica.
 muestras y no dispone de muestreo adaptativo. Los cuadernos guardan resultados
 de texto; los gráficos se exportan por separado. No se declara compatibilidad
 general con Wolfram Language ni validación para uso científico general.
+
+## Código en desarrollo: operaciones científicas
+
+La rama de desarrollo amplía la consola con `N`, `Factor`, `Together`, `Cancel`,
+`Substitute`, sumas finitas `Sum`, `Integrate`, `Solve` y `DSolve`. Añade listas,
+igualdades `==` y metadatos para distinguir aproximación, condiciones y resultados
+no resueltos. `N[Pi,50]` solicita 50 dígitos; `Sum[n^2,{n,1,10}]` devuelve 385.
+
+Son implementaciones acotadas: álgebra racional sobre Q, sistemas algebraicos
+lineales y EDO para una sola función de orden 1 o 2. Las condiciones y
+verificaciones son parciales. Consulte [la sintaxis y los límites](docs/es/lenguaje.md)
+y [el ejemplo sin resultados precalculados](examples/scientific.mchan).
+
+**Todavía no hay una nueva release para estas funciones.** El código mantiene
+la versión de paquete 0.1.0; eso no incorpora estas capacidades al ZIP v0.1.0
+publicado anteriormente. La interfaz gráfica y las herramientas especializadas
+de física estadística siguen pendientes.
 
 ## Descargas y código fuente
 

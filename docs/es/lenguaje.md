@@ -2,6 +2,11 @@
 
 [English](../en/language.md)
 
+Este documento describe la **rama de desarrollo**. El paquete aún declara 0.1.0,
+pero las operaciones científicas de esta página no constituyen una nueva release
+ni se presuponen incluidas en el ZIP Windows v0.1.0 ya publicado. Consulte
+[el estado y las descargas](../../README.md) antes de elegir una distribución.
+
 Mathechan 0.1 ofrece una consola experimental con un parser propio y evaluación
 matemática mediante SymPy. La sintaxis toma como referencia convenciones de
 Mathematica, pero no ofrece compatibilidad general con Wolfram Language.
@@ -13,12 +18,14 @@ Todavía no hay interfaz gráfica ni editor visual de cuadernos.
 |---|---|
 | Enteros y decimales | Exactos: `0.1+0.2` produce `3/10` |
 | Símbolos | Letras ASCII seguidas de letras o dígitos; distinguen mayúsculas |
-| Constantes | `Pi`, `E` |
+| Constantes | `Pi`, `E`; `Infinity` en límites de integración |
 | Operadores | `+`, `-`, `*`, `/`, `^`; multiplicación explícita |
 | Agrupación | Paréntesis: `(x+1)^2` |
 | Funciones de un argumento | `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`, `Simplify` |
 | Derivada | `D[expresión, símbolo]` |
 | Gráfico | `Plot[expresión, {símbolo, mínimo, máximo}]`, solo como expresión raíz |
+| Igualdad | `ladoIzquierdo == ladoDerecho`; ecuación inerte, sin asignación |
+| Listas | `{a,b,...}`; hasta 64 elementos por lista, dentro de los límites del parser |
 
 La potencia asocia a la derecha: `x^2^3` significa `x^(2^3)`. Tiene precedencia
 sobre el signo: `-x^2` significa `-(x^2)`. Resta y división asocian a la izquierda.
@@ -40,11 +47,107 @@ global adicional a `Simplify`. Resultados que requieran funciones no admitidas,
 demasiados tokens o números demasiado largos no obtienen una entrada reutilizable.
 No se intenta encontrar siempre la representación más corta posible.
 
-No se admiten asignaciones, patrones, funciones del usuario, listas generales,
-`Integrate`, `Solve`, unidades o sesiones con estado. Los símbolos no se asumen
+No se admiten asignaciones, patrones, definiciones de funciones del usuario,
+unidades o sesiones con estado. `y[x]` como función desconocida se utiliza en el
+contexto acotado de `DSolve`; no habilita definiciones arbitrarias. Los símbolos no se asumen
 reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
+
+## Operaciones científicas en desarrollo
+
+### Aproximación, álgebra y sustitución
+
+| Operación | Ejemplo | Alcance actual |
+|---|---|---|
+| `N` | `N[Pi,50]` | Escalar numérico sin símbolos libres; 15 dígitos solicitados por defecto o entero de 1 a 1000. |
+| `Factor` | `Factor[x^2-1]` | Polinomios con coeficientes racionales, sobre Q. |
+| `Together` | `Together[1/x+1/(x+1)]` | Combina denominadores en funciones racionales sobre Q. |
+| `Cancel` | `Cancel[(x^2-1)/(x-1)]` | Cancela factores racionales conservando exclusiones originales como condiciones. |
+| `Substitute` | `Substitute[x^2+y,x,1/3]` | Una sustitución exacta, resultado `y + 1/9`; admite anidación. |
+
+`N` usa evaluación de precisión estricta: si no puede sostener la precisión
+solicitada, devuelve un error útil. Los resultados aproximados conservan `Float`,
+también cero; no se convierten a racionales. Pedir más dígitos a un valor ya
+aproximado no recupera información perdida. `details.numeric_evaluations` registra
+los dígitos significativos solicitados. La salida con Float tiene `input: null`
+mientras el lenguaje no pueda preservar su carácter aproximado al reintroducirla.
+
+Factorización y operaciones racionales no son `Simplify` general: por ahora
+rechazan funciones, Float y coeficientes irracionales como `Pi` o `Sqrt[2]`.
+Su control previo admite hasta ocho símbolos, grado estimado 256 por numerador
+y denominador y una estimación conservadora de 4096 términos. Puede rechazar
+una entrada antes de expandir; esas cotas no son un límite temporal garantizado.
+
+`Substitute` conserva otros símbolos y transforma las restricciones originales.
+`Substitute[x/x,x,0]` se rechaza; `Substitute[x/x,x,y]` conserva `y != 0`.
+Solo admite valores escalares finitos: sustituir `Infinity` no equivale a tomar
+un límite, aunque `Integrate` sí lo admita como extremo directo. No deshace
+simplificaciones anteriores basadas en supuestos. Sustituir un parámetro puede
+reevaluar una Integral pendiente y actualizar o eliminar condiciones de ramas;
+los requisitos de realidad de los límites se conservan y transforman.
+
+### Sumas e integración
+
+`Sum[n^2,{n,1,10}]` devuelve `385`. Los extremos son enteros exactos e inclusivos;
+un intervalo vacío devuelve cero. Cada suma admite 1000 términos y una evaluación
+completa comparte un presupuesto de 2000 términos, incluidas sumas anidadas.
+El índice está ligado localmente, puede ocultar un índice externo y no deja
+asignaciones en una sesión. Los términos se evalúan con sus restricciones: una
+singularidad no desaparece por cancelar primero una fórmula genérica.
+
+`Integrate[x^2,x]` calcula una antiderivada **sin constante aditiva**.
+`Integrate[Exp[-x^2],{x,-Infinity,Infinity}]` devuelve `sqrt(pi)`.
+Los límites definidos son reales e independientes de la variable; pueden ser
+infinitos reales. La antiderivada puede incluir comprobación por derivación en
+`details`; una integral definida no queda verificada solo por devolver un valor.
+
+Se conservan resultados `Piecewise`: sus condiciones describen **ramas
+alternativas**, no requisitos que deban cumplirse todos a la vez. Una `Integral`
+sin evaluar conserva `status: "unresolved"`. Las ramas divergentes se señalan;
+un Piecewise sin construcción pendiente usa estado `conditional`.
+no se solicita automáticamente valor principal. Las exclusiones del integrando
+en su variable ligada se registran como `details.integrand_conditions`, no como
+restricciones de una variable libre del resultado. Esto no sustituye un análisis
+general de convergencia, ramas o dominio.
+
+### Ecuaciones y ecuaciones diferenciales
+
+`Solve[x^2==2,x]` trabaja sobre `Complexes` por defecto;
+`Solve[x^2==2,x,Reals]` restringe a reales. La igualdad `==` se conserva como
+ecuación, incluso si sus lados se simplifican a lo mismo; no es una asignación.
+No se admiten cadenas `a==b==c`: utilice una lista.
+
+`Solve[{x+y==3,x-y==1},{x,y}]` devuelve el conjunto de tuplas `{(2,1)}`.
+Se admiten hasta ocho ecuaciones y variables distintas; los sistemas son lineales.
+El resultado puede ser vacío, un conjunto finito, una familia parametrizada o
+un conjunto condicionado. Los residuos por sustitución y el dominio aparecen
+en `details` cuando se comprueban. Si el rango o grado depende de parámetros,
+no se omiten casos degenerados: puede conservarse un resultado condicionado
+con estado no resuelto. Las exclusiones originales del denominador se aplican
+a las soluciones; no se presume que todo conjunto sea una lista reutilizable.
+Una familia real sujeta a restricciones externas puede conservar estado
+`conditional`, sin presentarse como conjunto real incondicional.
+
+`DSolve[D[y[x],x]==y[x],y[x],x]` admite una EDO ordinaria para una función de
+orden 1 o 2. Las derivadas superiores se escriben anidadas. Ejemplo con datos:
+
+```text
+DSolve[{D[D[y[x],x],x]+y[x]==0,y[0]==1,Substitute[D[y[x],x],x,0]==0},y[x],x]
+```
+
+Se admite una EDO y hasta cuatro datos iniciales; datos incompatibles o fuera
+del alcance se rechazan. La solución anterior es `y(x)=cos(x)`. La salida puede
+conservar constantes arbitrarias, varias ramas o una ecuación no resuelta.
+`details.ode_residuals` e `initial_residuals` informan verificaciones locales;
+un residuo nulo no prueba completitud de la familia, existencia/unicidad ni
+dominio global. No se admiten sistemas de EDO ni derivadas parciales.
+También se comprueban exclusiones originales retenidas en los puntos iniciales;
+si su evaluación es incierta, no se presenta una verificación incondicional.
+
+El cuaderno [scientific.mchan](../../examples/scientific.mchan) contiene fuentes
+de ejemplo sin resultados guardados. Véase la
+[decisión de alcance](../decisions/002-scientific-operations.md).
 
 ## Consola
 
@@ -113,10 +216,20 @@ del gráfico ni detecta todos los polos. El SVG se guarda en la ruta solicitada.
 
 `from mathechan import evaluate, MathechanError`.
 `evaluate(source)` devuelve `EvaluationResult` con `kind`, `text`, `latex`,
-`svg`, `points`, `input`, `conditions` y `warnings`; `to_dict()` produce contenido
+`svg`, `points`, `input`, `conditions`, `warnings`, `status`, `exact` y `details`;
+`to_dict()` produce contenido
 serializable con los campos nuevos añadidos. Los errores
 esperados se notifican con `MathechanError`. El parser traduce un árbol propio
 a objetos SymPy sin interpretar la entrada como código Python.
+
+Los campos son aditivos. `exact` indica ausencia de Float en la expresión
+devuelta; no acredita que el problema esté completamente resuelto. `status`
+distingue, entre otros, `evaluated`, `approximate`, `verified`, `unverified`,
+`conditional`, `unresolved` y `no_solution`. `details` informa método, precisión
+solicitada, residuos o verificaciones según la operación; no tiene todos los
+campos en todos los resultados. `conditions` conserva condiciones necesarias
+parciales y condiciones de ramas identificadas como tales. Una llamada anidada
+puede propagar avisos y estado: no se interpreta `exact: true` como éxito universal.
 
 ## Cuadernos JSON v0.1
 

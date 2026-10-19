@@ -2,50 +2,58 @@
 
 [Español](../es/comparativa.md) · [Home](../../README.en.md)
 
-Mathematica is a reference for Mathechan's design. This comparison distinguishes
-its documented capabilities, functions in the **0.1.0** prototype, and pending
-work. It is neither a performance measurement nor a compatibility claim.
+Mathematica is a design reference. This comparison separates its documented
+capabilities, the published **v0.1.0** distribution, and the **development branch**.
+The latter is not a new release; the package version remains 0.1.0.
+This is not a benchmark or a general compatibility claim.
 
-| Area | Documented reference | Mathechan 0.1.0 |
-|---|---|---|
-| Language | Expressions with heads and arguments. [S11](../SOURCES.md#s11) | Restricted parser; exact arithmetic and rational decimals. |
-| Kernel | Kernel access through a text interface. [S12](../SOURCES.md#s12) | CLI evaluation using SymPy 1.14; no persistent session. |
-| Notebooks | Editable record of work. [S03](../SOURCES.md#s03) | Inert `.mchan` JSON; loading and saving, without a graphical editor. |
-| Algebra and calculus | Integration with documented assumptions. [S05](../SOURCES.md#s05) | `Expand`, `Simplify`, `D`, and elementary functions; no general integration. |
-| Plotting | Sampling and `Plot` controls. [S13](../SOURCES.md#s13) | One variable, 201 uniform samples, and SVG export. |
-| Interactivity | Dynamic interfaces. [S06](../SOURCES.md#s06) | Pending. |
-| Probability | Expectations with respect to distributions. [S14](../SOURCES.md#s14) | Specialized tools pending. |
-| Processes | Finite Markov processes in discrete and continuous time. [S15](../SOURCES.md#s15) | Pending. |
-| PDEs | Numerical solution using finite elements. [S10](../SOURCES.md#s10) | Pending. |
-| Parallelism | Integrated parallel computation. [S07](../SOURCES.md#s07) | Pending. |
+| Area | Documented reference | v0.1.0 distribution | Development branch, no new release |
+|---|---|---|---|
+| Language | Expressions with heads and arguments. [S11](../SOURCES.md#s11) | Restricted parser and exact arithmetic. | Adds inert `==` equalities, lists of up to 64 elements, and bounded scientific operations. |
+| Kernel | Text interface. [S12](../SOURCES.md#s12) | CLI using SymPy 1.14. | Keeps stateless CLI; adds status, representational exactness, and details. |
+| Notebooks | Editable work record. [S03](../SOURCES.md#s03) | Inert `.mchan` JSON without graphical editing. | Keeps the format and inert loading; adds scientific example sources without results. |
+| Algebra and calculus | Integration with assumptions. [S05](../SOURCES.md#s05) | `Expand`, `Simplify`, `D`, and elementary functions. | Adds `N`, `Factor`, `Together`, `Cancel`, `Substitute`, `Sum`, `Integrate`, `Solve`, and `DSolve`, with explicit limits. |
+| Plotting | Sampling and Plot controls. [S13](../SOURCES.md#s13) | 201 samples and univariate SVG. | Checks sampled original restrictions; keeps fixed sampling without general pole detection. |
+| Interactivity | Dynamic interfaces. [S06](../SOURCES.md#s06) | Pending. | Pending. |
+| Probability | Expectations over distributions. [S14](../SOURCES.md#s14) | Specialized tools pending. | Pending; a generic sum or integral is not a statistical physics library. |
+| Processes | Finite discrete/continuous Markov processes. [S15](../SOURCES.md#s15) | Pending. | Pending. |
+| PDEs | Finite elements. [S10](../SOURCES.md#s10) | Pending. | Pending; current DSolve only supports one-function ODEs. |
+| Parallelism | Integrated parallel computation. [S07](../SOURCES.md#s07) | Pending. | Pending. |
 
-## Currently usable scope
+## Published distribution and development code
 
-The subset accepts `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`,
-`Simplify`, and `D[expression, variable]`. It does not include assignments,
-patterns, implicit multiplication, or all differentiation forms. Text output
-uses SymPy notation; it is not guaranteed to be directly reusable as
-Mathechan input.
+The v0.1.0 ZIP supports `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`,
+`Simplify`, `D`, and `Plot`. Keeping the same source package version does
+not make branch changes part of that distribution.
 
-`Plot` requires finite real endpoints and a single free variable. It rejects
-non-real or non-finite values encountered while sampling, but may miss poles
-between samples. It has neither general singularity detection nor adaptive
-sampling. The `.mchan` files store text results; SVG output is exported
-separately. Opening a notebook does not execute its cells.
+The new block supports requested precision from 1 to 1000 digits, rational
+algebra over Q, and exact substitution with transported restrictions. Sums use
+inclusive integer bounds and finite budgets. Integration may return conditional
+branches or unevaluated integrals: not every return is a closed answer.
 
-The desktop application, persistent process, robust cancellation, and
-specialized statistical physics tools remain to be developed. Parser input
-limits do not provide security isolation.
+`Solve` distinguishes the default complex domain from explicit real solving,
+solution sets, and linear systems; unresolved parameter cases are preserved.
+`DSolve` supports one ODE of order 1 or 2 and initial data, with residual checks
+when possible. These checks do not establish completeness or a global domain.
 
-## Priorities
+Conditions are necessary and partial; `exact: true` means no Float, not a
+scientific proof. `input` is offered when a reusable representation is checked;
+Float approximations and other results may leave it null. `status` and
+`details` distinguish these cases. See [the language](language.md) and
+[the decision](../decisions/002-scientific-operations.md).
 
-Development will focus on statistical physics problems that can be reproduced
-with explicit assumptions and reference results. The long-term engine choice
-remains open: SymPy supports evaluation of this first subset, without deciding
-all future choices.
+## Limits and priorities
 
-Repository tests check specific cases of arithmetic, precedence,
-differentiation, errors, export, and notebook format. They do not establish
-universal accuracy, parity with another system, or physical validation.
-See [the objectives](objectives.md), [the language](language.md), and
-[the sources](../SOURCES.md).
+Plot may miss poles between samples and connect discontinuities. It has no
+adaptive sampling or general singularity validation. Notebooks store text;
+SVG is exported separately. Opening them never evaluates cells.
+
+The graphical interface, persistent process, robust cancellation, and dedicated
+statistical physics tools remain pending. Parser limits do not guarantee
+execution time, memory, or isolation.
+
+Development focuses on reproducible problems with explicit assumptions and
+references. SymPy supports this block without settling the long-term engine.
+Tests check specific cases, not parity with Mathematica, universal accuracy,
+or general physical validation. See [objectives](objectives.md) and
+[sources](../SOURCES.md).
