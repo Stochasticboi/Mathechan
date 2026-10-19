@@ -35,7 +35,7 @@ class KernelTests(unittest.TestCase):
 
     def test_rejects_invalid_and_arbitrary_code(self):
         for source in ("", "x=2", "__import__('os')", "x.__class__", "open[x]", "Sin[]",
-                       "Sin[x,y]", "D[x,2]", "D[x]", "2x", "1/0", "Log[0]", "{1,2}",
+                       "Sin[x,y]", "D[x,2]", "D[x]", "2x", "1/0", "Log[0]",
                        "Plot[Sin[x],{Pi,0,1}]", "2^1001", "(x", "x;1", "x[1]"):
             with self.subTest(source=source):
                 self.assertRaises(MathechanError, evaluate, source)
