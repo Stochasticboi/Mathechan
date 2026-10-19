@@ -3,7 +3,7 @@
 import sys
 
 from mathechan import MathechanError, __version__, evaluate
-from mathechan.__main__ import main as command_main
+from mathechan.__main__ import main as command_main, print_conditions
 
 
 def repl():
@@ -29,6 +29,9 @@ def repl():
                 print("Guardar SVG / Save SVG: Mathechan.exe \"Plot[...]\" --output plot.svg")
             else:
                 print(result.text)
+                if result.input is not None and result.input != result.text:
+                    print(f"Entrada / Input: {result.input}")
+            print_conditions(result)
         except MathechanError as error:
             print(f"Error: {error}", file=sys.stderr)
 

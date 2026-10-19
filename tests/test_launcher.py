@@ -45,6 +45,17 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("Goodbye", result.stdout)
         self.assertNotIn("Traceback", result.stderr)
 
+    def test_input_argument_keeps_imaginary_constant_reusable(self):
+        result = self.run_launcher("Sqrt[-1]", "--input")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "Sqrt[-1]")
+
+    def test_repl_displays_reusable_input_and_original_conditions(self):
+        result = self.run_launcher(input_text="Sqrt[-1]\nx/x\nsalir\n")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Entrada / Input: Sqrt[-1]", result.stdout)
+        self.assertIn("Condiciones / Conditions: (x) != 0", result.stdout)
+
     def test_errors_do_not_print_tracebacks(self):
         result = self.run_launcher("1/0")
         self.assertEqual(result.returncode, 2)

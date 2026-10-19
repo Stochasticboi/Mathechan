@@ -24,6 +24,21 @@ Powers associate to the right: `x^2^3` means `x^(2^3)`. Powers take precedence
 over unary signs: `-x^2` means `-(x^2)`. Subtraction and division associate to
 the left. Text results currently use SymPy notation, such as `3*x**2`;
 this output is not guaranteed to be valid input for the Mathechan parser.
+The additive `input` field contains verified reusable input when the result fits
+the supported subset and current limits; otherwise it is JSON `null` or Python
+`None`. The existing `text` representation is unchanged.
+
+`I` remains a generic symbol. The imaginary constant from `Sqrt[-1]` also has
+`text: "I"`, but its `input` is `Sqrt[-1]`; the generic symbol has `input: "I"`.
+Mathematical constants use `Pi` and `E`. Reuse `input` rather than automatically
+copying `text`.
+
+The printer covers integers, rationals, supported symbols, sums, products,
+powers, and `Sin`, `Cos`, `Exp`, `Log`, using `^` and square brackets. Candidates
+pass the parser, evaluator, and structural equality check, without an additional
+global `Simplify` call. Unsupported result functions, excess tokens, and numbers
+exceeding input limits yield no reusable representation. The printer does not
+promise to find the shortest possible representation.
 
 Assignments, patterns, user-defined functions, general lists, `Integrate`,
 `Solve`, units, and stateful sessions are not supported. Symbols are not
@@ -40,6 +55,7 @@ ends the session. Arguments run a single command:
 ```powershell
 .\Mathechan.exe 'D[x^3,x]'
 .\Mathechan.exe '1/3+1/6' --json
+.\Mathechan.exe 'Sqrt[-1]' --input
 .\Mathechan.exe 'Plot[Exp[-x^2],{x,-3,3}]' --output gaussian.svg
 .\Mathechan.exe --demo --output gaussian.svg
 ```
@@ -48,6 +64,36 @@ The interactive console shows a `Plot` summary; exporting SVG requires a
 command with `--output`. Plot windows do not open automatically. After
 installing the Python package, `python -m mathechan` accepts the same arguments;
 that command requires an expression or `--demo`.
+
+`--input` writes only reusable input to stdout and conditions/warnings to stderr.
+An unavailable representation returns code 2 with a clear error. It cannot be
+combined with `--json`. The interactive console adds an `Entrada / Input` line
+when reusable input differs from the displayed `text`.
+
+## Original conditions
+
+Before simplification, the evaluator retains nonzero restrictions from explicit
+division denominators and bases of powers with known negative exponents. For
+example, `x/x` returns `text: "1"`, `input: "1"`, and condition `(x) != 0`;
+`Simplify[(x^2-1)/(x-1)]` returns `x + 1` while retaining the condition on `x-1`.
+The console displays these conditions and JSON includes a `conditions` field.
+Conditions are informative text, not new comparison syntax.
+
+Reusable input for the simplified result does not automatically encode these
+restrictions. Keep `conditions` and `warnings` separately: evaluating `1` alone
+cannot restore its provenance from `x/x`. For plots, `input` preserves the
+validated original source, including its explicit restrictions.
+
+This is conservative, partial tracking. It does not solve the universal domain,
+determine all branch cuts, or automatically incorporate every function or
+derivative domain. `Plot` checks original denominators at every sample and
+rejects zeros even after cancellation: `Plot[x/x,{x,-1,1}]` fails at 0. Conditions
+involving unbound parameters are also rejected when they cannot be checked.
+Endpoint conditions use exact symbolic values: a `Sin[x]` denominator at endpoint
+`Pi` is detected as zero before coordinates are rounded.
+Zeros between samples may still be missed; there is no general pole detection
+or tolerance-based near-zero criterion. See the
+[results and domains decision](../decisions/001-results-and-domains.md).
 
 ## Input and numerical limits
 
@@ -67,7 +113,8 @@ is saved at the requested path.
 
 `from mathechan import evaluate, MathechanError`.
 `evaluate(source)` returns `EvaluationResult` with `kind`, `text`, `latex`,
-`svg`, and `points`; `to_dict()` produces serializable content. Expected errors
+`svg`, `points`, `input`, `conditions`, and `warnings`; `to_dict()` produces
+serializable content with the new fields added. Expected errors
 raise `MathechanError`. The parser translates its own syntax tree into SymPy
 objects without interpreting input as Python code.
 
