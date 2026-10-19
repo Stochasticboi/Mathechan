@@ -50,7 +50,7 @@ architecture, dependency list, source revision, and executable checksum.
 The recipe runs the executable acceptance check before reporting success:
 
 ```powershell
-& $buildPython packaging/windows/smoke_test.py dist/Mathechan.exe --timeout 60
+& $buildPython packaging/windows/smoke_test.py dist/Mathechan.exe --timeout 60 --scientific
 ```
 
 The timeout applies to each invocation. The check verifies exact derivative JSON,
@@ -60,12 +60,15 @@ against `math.sin`, the SVG coordinates on a 640×340 canvas with 5% padding
 `PYTHONPATH`, `PYTHONHOME`, and virtual-environment settings from the subprocess
 environment, and sets `PATH` to Windows/System32 and Windows. It runs from a
 temporary working directory without the source tree on the Python search path.
-This checks system-path isolation, not a separate clean machine.
+The scientific option adds nine JSON checks for numerical precision, rational
+algebra, substitution, finite sums, integration, equation roots, and ODE/initial
+residuals. All thirteen checks must pass. This checks system-path isolation,
+not a separate clean machine.
 
 The Windows CI job uses this recipe and uploads its executable, notices, build
 environment, and SHA-256 only after all checks pass. It does not publish releases.
 
-Before publishing, also execute the binary on a separate Windows installation:
+For broader Windows validation, also execute the binary on a separate installation:
 
 ```powershell
 .\dist\Mathechan.exe 'D[x^3,x]'
@@ -77,7 +80,8 @@ Get-FileHash -Algorithm SHA256 -LiteralPath dist/Mathechan.exe
 Check expected expressions, errors, interactive exit, JSON output, SVG content,
 and running without a separate Python installation. Source tests do not prove
 that an executable works. Record build and binary validation results for each
-release. A passing check covers these cases, not every operating-system setup.
+release. Experimental release notes must state when independent clean-Windows
+validation is pending. A passing check covers these cases, not every setup.
 
 ## Español
 
@@ -97,6 +101,9 @@ La receta ejecuta `smoke_test.py` sobre el binario antes de declarar éxito.
 Comprueba derivada JSON exacta, error de división por cero sin traceback,
 las 201 muestras contra `math.sin`, sus coordenadas SVG en un lienzo 640×340
 con margen del 5% (tolerancia 0.001) y cálculo interactivo seguido de salida.
+La opción `--scientific`, activada por la receta, añade nueve comprobaciones JSON
+de precisión, álgebra racional, sustitución, sumas, integrales, raíces y residuos
+de EDO/datos iniciales. Deben pasar las trece comprobaciones.
 Cada invocación tiene un timeout configurable. El proceso elimina `PYTHONPATH`,
 `PYTHONHOME` y variables de entorno virtual; su `PATH` contiene únicamente
 Windows/System32 y Windows. Trabaja en un directorio temporal. Este aislamiento
@@ -105,10 +112,11 @@ de rutas no equivale a probar en otra máquina limpia.
 El trabajo Windows de CI construye y comprueba el ejecutable real; solo después
 sube el artefacto con avisos, entorno y SHA-256. No publica versiones.
 
-Antes de publicar, verifique el binario en otra instalación Windows, sin Python
+Para ampliar la validación, compruebe el binario en otra instalación Windows, sin Python
 instalado: cálculo exacto, errores controlados, salida del modo interactivo,
 salida JSON y exportación SVG. Registre versiones, revisión fuente y SHA-256.
-Las pruebas del código fuente no sustituyen las del ejecutable. Superar los
+Las notas de una versión experimental deben declarar si esa validación sigue
+pendiente. Las pruebas del código fuente no sustituyen las del ejecutable. Superar los
 casos de aceptación tampoco verifica todas las instalaciones Windows posibles.
 
 ## Versions and licenses / Versiones y licencias

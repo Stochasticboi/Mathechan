@@ -13,7 +13,7 @@ The project began on **18 October 2026**, with an initial five-year horizon
 through October 2031. Its syntax takes Mathematica as a reference, with its
 own specification and a scope developed incrementally.
 
-## Published distribution: experimental 0.1.0
+## Experimental version 0.1.1
 
 The current version runs **from the command line**, using a restricted parser
 and SymPy 1.14 for evaluation. It does not yet have a graphical interface.
@@ -29,9 +29,9 @@ samples and does not provide adaptive sampling. Notebooks store text results;
 plots are exported separately. General Wolfram Language compatibility and
 validation for general scientific use are not claimed.
 
-## Development code: scientific operations
+## Scientific operations in 0.1.1
 
-The development branch extends the console with `N`, `Factor`, `Together`,
+Version 0.1.1 extends the console with `N`, `Factor`, `Together`,
 `Cancel`, `Substitute`, finite `Sum`, `Integrate`, `Solve`, and `DSolve`. It adds
 lists, `==` equalities, and metadata distinguishing approximation, conditions,
 and unresolved results. `N[Pi,50]` requests 50 digits;
@@ -42,17 +42,16 @@ systems, and ODEs for one dependent function of order 1 or 2. Conditions and
 checks are partial. See [syntax and limits](docs/en/language.md) and the
 [example without precomputed results](examples/scientific.mchan).
 
-**There is no new release for these functions yet.** The source package version
-remains 0.1.0; that does not add these capabilities to the previously published
-v0.1.0 ZIP. The graphical interface and dedicated statistical physics tools
-remain pending.
+These functions belong to **0.1.1**; the earlier 0.1.0 ZIP retains its original
+scope. The graphical interface and dedicated statistical physics tools remain
+pending. See the [0.1.1 release notes](docs/en/releases/0.1.1.md).
 
 ## Downloads and source code
 
 Published versions and their files are available in
-[Releases](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.1.0).
+[Releases](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.1.1).
 For Windows x64, download the
-[ZIP archive](https://github.com/Stochasticboi/Mathechan/releases/download/v0.1.0/Mathechan-0.1.0-windows-x64.zip),
+[ZIP archive](https://github.com/Stochasticboi/Mathechan/releases/download/v0.1.1/Mathechan-0.1.1-windows-x64.zip),
 extract it and open `Mathechan.exe`. It opens an interactive console.
 The graphical interface is still under development. Release notes describe
 the Python packages, source code and checks performed.
@@ -74,6 +73,7 @@ The first evaluation returns `3*x**2`. The second creates an SVG file.
 - [Project history and background](docs/en/history.md).
 - [Comparison with Mathematica](docs/en/comparison.md).
 - [Experimental language](docs/en/language.md).
+- [Version 0.1.1 release notes](docs/en/releases/0.1.1.md).
 - [Sources](docs/SOURCES.md).
 - [Contributing](CONTRIBUTING.md).
 
