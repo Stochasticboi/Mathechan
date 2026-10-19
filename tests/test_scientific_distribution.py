@@ -1,0 +1,220 @@
+"""Scientific binary acceptance references and rejection of misleading metadata."""
+
+import contextlib
+import importlib.util
+import io
+import json
+import math
+import subprocess
+import tempfile
+import unittest
+from copy import deepcopy
+from pathlib import Path
+from unittest.mock import patch
+
+from mathechan import evaluate
+
+ROOT = Path(__file__).resolve().parents[1]
+SPECIFICATION = importlib.util.spec_from_file_location(
+    "scientific_smoke", ROOT / "packaging" / "windows" / "smoke_test.py"
+)
+smoke = importlib.util.module_from_spec(SPECIFICATION)
+SPECIFICATION.loader.exec_module(smoke)
+
+
+def references():
+    """Known algebraic identities, finite sum, polynomial integral, and decay."""
+    results = {
+        "N[Pi,30]": {
+            "kind": "expression",
+            "text": "3.14159265358979323846264338328",
+            "exact": False,
+            "status": "approximate",
+            "details": {
+                "numeric_evaluations": [
+                    {"requested_significant_digits": 30, "approximate": True}
+                ]
+            },
+        },
+        "Factor[x^2-1]": {"kind": "expression", "text": "(x - 1)*(x + 1)"},
+        "Together[1/x+1/y]": {
+            "kind": "expression",
+            "text": "(x + y)/(x*y)",
+            "conditions": ["(x) != 0", "(y) != 0"],
+        },
+        "Cancel[(x^2-1)/(x-1)]": {
+            "kind": "expression",
+            "text": "x + 1",
+            "conditions": ["((-1+x)) != 0"],
+        },
+        "Substitute[a*x,a,2]": {"kind": "expression", "text": "2*x"},
+        "Sum[n^2,{n,1,3}]": {"kind": "expression", "text": "14"},
+        "Integrate[x^2,{x,0,1}]": {"kind": "expression", "text": "1/3"},
+        "Solve[x^2==4,x]": {
+            "kind": "solutions",
+            "text": "{-2, 2}",
+            "details": {"verification": "verified"},
+        },
+        "DSolve[{D[y[x],x]==-2*y[x],y[0]==3},y[x],x]": {
+            "kind": "solutions",
+            "text": "Eq(y(x), 3*exp(-2*x))",
+            "status": "verified",
+            "details": {
+                "verification": "verified",
+                "ode_residuals": ["0"],
+                "initial_residuals": ["0"],
+                "initial_defined": True,
+                "initial_conditions": 1,
+            },
+        },
+    }
+    for payload in results.values():
+        payload.setdefault("exact", True)
+        payload.setdefault("status", "evaluated")
+        payload.setdefault("details", {})
+        payload.setdefault("conditions", [])
+        payload.setdefault("warnings", [])
+    return results
+
+
+def plot_fixture():
+    points = [
+        [math.pi * index / 200, math.sin(math.pi * index / 200)] for index in range(201)
+    ]
+    coordinates = " ".join(
+        f"{40 + 2.8 * index:.3f},{280 - (240 / 1.1) * (point[1] + 0.05):.3f}"
+        for index, point in enumerate(points)
+    )
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="640" height="340" viewBox="0 0 640 340">'
+        f'<polyline points="{coordinates}"/></svg>'
+    )
+    return {"kind": "plot", "points": points, "svg": svg}, svg
+
+
+class ScientificPayloadTests(unittest.TestCase):
+    def test_independent_references_and_current_source_satisfy_contract(self):
+        fixtures = references()
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 9)
+        for _, source in smoke.SCIENTIFIC_CASES:
+            with self.subTest(source=source):
+                smoke.check_scientific_payload(source, fixtures[source])
+                smoke.check_scientific_payload(source, evaluate(source).to_dict())
+
+    def test_numeric_precision_metadata_and_value_are_both_required(self):
+        good = references()["N[Pi,30]"]
+        mutations = []
+        payload = deepcopy(good)
+        payload["details"]["numeric_evaluations"][0]["requested_significant_digits"] = (
+            20
+        )
+        mutations.append(payload)
+        payload = deepcopy(good)
+        payload["text"] = "3.14159265358979300000000000000"
+        mutations.append(payload)
+        payload = deepcopy(good)
+        payload["text"] = "3.141592653589793"
+        mutations.append(payload)
+        payload = deepcopy(good)
+        payload["exact"] = True
+        mutations.append(payload)
+        payload = deepcopy(good)
+        payload["status"] = "evaluated"
+        mutations.append(payload)
+        payload = deepcopy(good)
+        payload["text"] = "NaN"
+        mutations.append(payload)
+        for payload in mutations:
+            with self.subTest(payload=payload), self.assertRaises(smoke.SmokeTestError):
+                smoke.check_scientific_payload("N[Pi,30]", payload)
+
+    def test_exact_operations_reject_wrong_result_status_and_missing_fields(self):
+        for field, bad in (
+            ("text", "15"),
+            ("status", "unresolved"),
+            ("exact", False),
+            ("details", []),
+        ):
+            payload = references()["Sum[n^2,{n,1,3}]"]
+            payload[field] = bad
+            with self.subTest(field=field), self.assertRaises(smoke.SmokeTestError):
+                smoke.check_scientific_payload("Sum[n^2,{n,1,3}]", payload)
+        with self.assertRaises(smoke.SmokeTestError):
+            smoke.check_scientific_payload("Factor[x^2-1]", [])
+
+    def test_original_domain_conditions_must_survive(self):
+        for source in ("Together[1/x+1/y]", "Cancel[(x^2-1)/(x-1)]"):
+            payload = references()[source]
+            payload["conditions"] = []
+            with self.subTest(source=source), self.assertRaises(smoke.SmokeTestError):
+                smoke.check_scientific_payload(source, payload)
+
+    def test_verified_status_cannot_replace_ode_and_initial_residuals(self):
+        source = "DSolve[{D[y[x],x]==-2*y[x],y[0]==3},y[x],x]"
+        for field, bad in (
+            ("ode_residuals", ["1"]),
+            ("initial_residuals", ["3"]),
+            ("initial_defined", False),
+            ("verification", "unverified"),
+            ("initial_conditions", True),
+        ):
+            payload = references()[source]
+            payload["details"][field] = bad
+            with self.subTest(field=field), self.assertRaises(smoke.SmokeTestError):
+                smoke.check_scientific_payload(source, payload)
+
+
+class ScientificSmokeTests(unittest.TestCase):
+    def test_scientific_mode_executes_nine_additional_json_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            executable = Path(directory) / "application.exe"
+            executable.write_bytes(b"fixture")
+            payloads = references()
+            plot, svg = plot_fixture()
+
+            def run(command, **options):
+                self.assertEqual(options["timeout"], 7)
+                self.assertEqual(options["env"], {"PATH": "system"})
+                if len(command) == 1:
+                    return subprocess.CompletedProcess(
+                        command, 0, "3*x**2\nGoodbye", ""
+                    )
+                source = command[1]
+                if source == "1/0":
+                    return subprocess.CompletedProcess(
+                        command, 2, "", "Error: division by zero"
+                    )
+                if source.startswith("Plot["):
+                    Path(command[-1]).write_text(svg, encoding="utf-8")
+                    result = plot
+                elif source == "D[x^3,x]":
+                    result = {"kind": "expression", "text": "3*x**2"}
+                else:
+                    self.assertEqual(command[2:], ["--json"])
+                    result = payloads[source]
+                return subprocess.CompletedProcess(command, 0, json.dumps(result), "")
+
+            with (
+                patch.object(
+                    smoke, "isolated_environment", return_value={"PATH": "system"}
+                ),
+                patch.object(smoke.subprocess, "run", side_effect=run) as runner,
+            ):
+                checks = smoke.smoke_test(executable, timeout=7, scientific=True)
+            self.assertEqual(len(checks), 13)
+            self.assertEqual(runner.call_count, 13)
+            self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
+
+    def test_command_line_option_is_forwarded(self):
+        with (
+            patch.object(smoke, "smoke_test", return_value=["fixture"]) as execute,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(
+                smoke.main(["application.exe", "--timeout", "8", "--scientific"]), 0
+            )
+        execute.assert_called_once_with(Path("application.exe"), 8.0, scientific=True)
+
+
+if __name__ == "__main__":
+    unittest.main()
