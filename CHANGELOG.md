@@ -1,5 +1,21 @@
 # Versiones / Releases
 
+## Sin publicar / Unreleased
+
+### Español
+
+- Los cuadernos se guardan con UTF-8 y saltos LF; el límite de 2 MB se aplica
+  a los mismos bytes al guardar y abrir, también en Windows.
+- La carga limita los bytes leídos y notifica los errores de conversión JSON
+  mediante `NotebookError`.
+
+### English
+
+- Notebooks are written as UTF-8 with LF line endings; saving and loading
+  apply the 2 MB limit to the same bytes, including on Windows.
+- Loading bounds the bytes read and reports JSON conversion failures through
+  `NotebookError`.
+
 ## 0.1.0 — 2026-10-18
 
 ### Español
