@@ -6,6 +6,8 @@ Este documento describe **Mathechan 0.1.1**. Las operaciones científicas se
 incorporan en esta versión; el ZIP anterior v0.1.0 conserva su alcance original.
 Consulte [las notas de versión](versiones/0.1.1.md) y
 [las descargas](../../README.md) antes de elegir una distribución.
+La sección «En desarrollo: sesión numérica» describe un incremento posterior,
+sin nueva release; no debe atribuirse al ZIP publicado de 0.1.1.
 
 Mathechan 0.1.1 ofrece una consola experimental con un parser propio y evaluación
 matemática mediante SymPy. La sintaxis toma como referencia convenciones de
@@ -47,12 +49,74 @@ global adicional a `Simplify`. Resultados que requieran funciones no admitidas,
 demasiados tokens o números demasiado largos no obtienen una entrada reutilizable.
 No se intenta encontrar siempre la representación más corta posible.
 
-No se admiten asignaciones, patrones, definiciones de funciones del usuario,
+En la versión publicada 0.1.1 no se admiten asignaciones, patrones, definiciones de funciones del usuario,
 unidades o sesiones con estado. `y[x]` como función desconocida se utiliza en el
 contexto acotado de `DSolve`; no habilita definiciones arbitrarias. Los símbolos no se asumen
 reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
+
+## En desarrollo: sesión numérica
+
+Este incremento añade estado numérico local en la API `Session` y la consola
+interactiva de Windows. Sigue en desarrollo, sin cambio de versión ni nueva
+distribución: el ZIP v0.1.1 conserva la evaluación independiente de cada línea.
+La función `evaluate(source)` continúa sin estado y rechaza asignaciones `=`.
+`==` mantiene su significado de igualdad inerte.
+
+Una sesión admite una asignación inmediata de raíz `nombre=expresión` por
+llamada. El valor debe ser escalar, numérico, finito, sin símbolos libres ni
+condiciones pendientes, y con estado incondicional. Se permiten números exactos
+y aproximaciones Float; se preserva su precisión, sin convertirlos a racionales
+ni a float de máquina para guardarlos.
+
+```python
+from mathechan import Session
+
+session = Session()
+session.evaluate("x=2")
+session.evaluate("a=x+1")
+session.evaluate("x=4")
+print(session.evaluate("a").text)  # 3
+```
+
+`a` conserva el valor calculado al asignarla; no almacena una fórmula que cambie
+al reasignar `x`. Cada objeto Session es independiente. La API también está en
+`mathechan.session.Session`. El resultado sigue siendo `EvaluationResult`; la
+asignación devuelve el valor, no una definición simbólica. Las llamadas del
+ejemplo son separadas: no se añade ejecución de scripts con `;`.
+
+El límite es 64 variables por sesión; reasignar una existente no ocupa otra
+entrada. Se protegen constantes y nombres de operaciones, incluidos `Pi`, `E`,
+`Infinity`, `Reals` y `Complexes`. Se rechazan listas, ecuaciones,
+resultados condicionados y asignaciones simbólicas como `a=y+1` si `y` no tiene
+valor numérico. Las funciones admitidas pueden calcular valores numéricos;
+eso no crea definiciones de funciones del usuario. No hay `Clear` ni persistencia en disco.
+Cerrar la consola o crear otra sesión no recupera variables de una anterior.
+
+### Variables ligadas y contexto de resultados
+
+Las variables formales de `D`, `Sum`, `Integrate`, `Solve`, `DSolve` y `Plot`
+ocultan el valor global del mismo nombre en su ámbito; los otros parámetros
+numéricos de sesión sí se aplican. Con `x=3`, `D[x^2,x]` devuelve `2*x` e
+`Integrate[x,x]` muestra `x**2/2`, no derivada cero ni una integral de la constante
+3. Para evaluar la derivada en 3 se utiliza `Substitute[D[x^2,x],x,3]`.
+El resultado simbólico de `D[x^2,x]` no puede almacenarse mediante `a=D[x^2,x]`.
+
+Los índices de sumas anidadas conservan su ámbito local. Por ejemplo,
+`Sum[D[n^2,n],{n,1,3}]` sigue devolviendo 12; una variable de sesión `n`
+no sustituye el índice ligado. Esta regla no añade asignaciones simbólicas.
+
+`input` conserva su contrato de reutilización **sin estado**. Volver a introducir
+una salida simbólica en una sesión puede cambiarla por sus valores globales:
+con `x=3`, reintroducir `2*x` da 6. Para reproducir una expresión independiente,
+usar `evaluate` sin estado o una sesión nueva y conservar condiciones por
+separado. Un Plot que use parámetros de sesión solo ofrece `input` si puede
+ser autosuficiente; si no, queda en None/null.
+
+Abrir o guardar un `.mchan` no ejecuta celdas, crea asignaciones ni restaura
+variables. El formato de cuaderno y sus resultados de texto no se convierten
+en almacenamiento del estado de Session.
 
 ## Operaciones científicas de 0.1.1
 
@@ -167,6 +231,8 @@ La consola interactiva muestra un resumen de `Plot`; exportar SVG requiere
 `--output` en un comando. No abre automáticamente ventanas de gráficos.
 Al instalar el paquete Python también puede usarse `python -m mathechan` con
 los mismos argumentos; ese comando requiere una expresión o `--demo`.
+La sesión numérica descrita arriba corresponde al incremento en desarrollo:
+la distribución publicada 0.1.1 y los comandos individuales permanecen sin estado.
 
 `--input` emite solo entrada reutilizable en stdout y condiciones/avisos en
 stderr. Si no existe representación verificada, termina con código 2 y un error
@@ -215,6 +281,7 @@ del gráfico ni detecta todos los polos. El SVG se guarda en la ruta solicitada.
 ## API Python
 
 `from mathechan import evaluate, MathechanError`.
+`Session` se añade únicamente en el incremento en desarrollo descrito arriba.
 `evaluate(source)` devuelve `EvaluationResult` con `kind`, `text`, `latex`,
 `svg`, `points`, `input`, `conditions`, `warnings`, `status`, `exact` y `details`;
 `to_dict()` produce contenido

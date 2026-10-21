@@ -1,16 +1,16 @@
 """Parser acotado y evaluación explícita sobre objetos SymPy."""
 
+import math
+import re
 from dataclasses import dataclass, field
 from fractions import Fraction
 from html import escape
-import math
-import re
 
 import sympy as sp
 
 from .domains import condition_text, require_nonzero, restrictions_at
+from .language_ops import SCIENTIFIC_CALLS, EvaluationState, scientific_call
 from .printer import expression_input
-from .language_ops import EvaluationState, SCIENTIFIC_CALLS, scientific_call
 
 
 class MathechanError(ValueError):
@@ -51,11 +51,11 @@ class EvaluationResult:
         return result
 
 
-TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(==|[+*/^(),\[\]{}-]))")
+TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(==|[=+*/^(),\[\]{}-]))")
 
 
 class Parser:
-    def __init__(self, source):
+    def __init__(self, source, allow_assignment=False):
         if not isinstance(source, str) or not source.strip():
             raise MathechanError("La entrada debe ser texto no vacío.")
         if len(source) > 4096:
@@ -73,6 +73,7 @@ class Parser:
             raise MathechanError("Demasiados elementos (máximo 256).")
         self.index = 0
         self.depth = 0
+        self.allow_assignment = allow_assignment
 
     def peek(self):
         return self.tokens[self.index] if self.index < len(self.tokens) else None
@@ -85,7 +86,13 @@ class Parser:
         return token
 
     def parse(self):
-        node = self.expression()
+        if (self.allow_assignment and len(self.tokens) >= 2
+                and self.tokens[0][0].isalpha() and self.tokens[1] == "="):
+            name = self.take()
+            self.take("=")
+            node = Node("assignment", name, (self.expression(),))
+        else:
+            node = self.expression()
         if self.peek() is not None:
             raise MathechanError(f"Elemento inesperado: {self.peek()}.")
         return node
@@ -144,15 +151,16 @@ FUNCTIONS = {
 }
 
 
-def build(node, restrictions=None, state=None, bindings=None, functions=None):
+def build(node, restrictions=None, state=None, bindings=None, functions=None, definitions=None):
     """Traduce nodos propios; nunca interpreta cadenas como código."""
     state = EvaluationState() if state is None else state
     bindings = {} if bindings is None else bindings
     functions = {} if functions is None else functions
+    definitions = {} if definitions is None else definitions
     restrictions = [] if restrictions is None else restrictions
 
     def read(child):
-        return build(child, restrictions, state, bindings, functions)
+        return build(child, restrictions, state, bindings, functions, definitions)
 
     if node.kind == "number":
         rational = Fraction(node.value)
@@ -160,6 +168,8 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None):
     if node.kind == "name":
         if node.value in bindings:
             return bindings[node.value]
+        if node.value in definitions:
+            return definitions[node.value]
         return {"Pi": sp.pi, "E": sp.E, "Infinity": sp.oo}.get(node.value, sp.Symbol(node.value))
     if node.kind == "list":
         if len(node.children) > 64:
@@ -194,7 +204,7 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None):
         return left ** right
     if node.kind == "call":
         if node.value in SCIENTIFIC_CALLS:
-            return scientific_call(node, build, restrictions, state, bindings, functions)
+            return scientific_call(node, build, restrictions, state, bindings, functions, definitions)
         if node.value in functions:
             if len(node.children) != 1:
                 raise MathechanError("La función dependiente de DSolve requiere un argumento.")
@@ -213,7 +223,7 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None):
     raise MathechanError("Construcción no admitida por el evaluador.")
 
 
-def plot(node, source=None, state=None):
+def plot(node, source=None, state=None, definitions=None):
     if len(node.children) != 2:
         raise MathechanError("Use Plot[expresión, {variable, mínimo, máximo}].")
     range_node = node.children[1]
@@ -221,8 +231,12 @@ def plot(node, source=None, state=None):
         raise MathechanError("Plot requiere un rango {variable, mínimo, máximo}.")
     restrictions = []
     state = EvaluationState() if state is None else state
-    expression = build(node.children[0], restrictions, state)
-    variable, lower, upper = (build(child, restrictions, state) for child in range_node.children)
+    definitions = {} if definitions is None else definitions
+    variable = build(range_node.children[0], restrictions, state)
+    local_definitions = {name: value for name, value in definitions.items() if name != str(variable)}
+    expression = build(node.children[0], restrictions, state, definitions=local_definitions)
+    lower, upper = (build(child, restrictions, state, definitions=definitions)
+                    for child in range_node.children[1:])
     if not isinstance(expression, sp.Expr) or not all(isinstance(item, sp.Expr) for item in (lower, upper)):
         raise MathechanError("Plot requiere una expresión y extremos escalares.")
     if not isinstance(variable, sp.Symbol) or expression.free_symbols - {variable}:
@@ -278,6 +292,9 @@ def plot(node, source=None, state=None):
            '<path d="M40 40 V280 H600" fill="none" stroke="#475569"/>'
            f'<polyline points="{coordinates}" fill="none" stroke="#2563eb" stroke-width="2"/>'
            f'<text x="40" y="315" font-size="13">{title}</text></svg>')
+    if definitions:
+        source = None
+        state.warnings.append("El gráfico no ofrece entrada reutilizable independiente del contexto de sesión.")
     return EvaluationResult("plot", sp.sstr(expression), svg=svg, points=tuple(points),
                             input=source, conditions=condition_text(restrictions) + tuple(state.conditions),
                             warnings=tuple(dict.fromkeys(state.warnings)), status=state.status,
@@ -296,15 +313,14 @@ def reusable_input(expression):
         return None
 
 
-def evaluate(source):
-    """Evalúa una expresión del subconjunto v0 y devuelve contenido estructurado."""
+def _evaluate_node(node, source, definitions=None):
+    """Return structured output and its immutable value without reparsing display text."""
     try:
-        node = Parser(source).parse()
         state = EvaluationState()
         if node.kind == "call" and node.value == "Plot":
-            return plot(node, source.strip(), state)
+            return plot(node, source.strip(), state, definitions), None
         restrictions = []
-        expression = build(node, restrictions, state)
+        expression = build(node, restrictions, state, definitions=definitions)
         if ((expression.has(sp.zoo, sp.nan) and not expression.has(sp.Piecewise))
                 or (isinstance(expression, sp.Expr) and expression.is_finite is False)):
             raise MathechanError("El resultado no es finito o está indefinido.")
@@ -321,12 +337,18 @@ def evaluate(source):
         elif isinstance(expression, sp.Tuple):
             kind = "list"
         text = expression_input(expression) if kind in ("equation", "list") else None
-        return EvaluationResult(kind, text or sp.sstr(expression), latex=sp.latex(expression),
+        result = EvaluationResult(kind, text or sp.sstr(expression), latex=sp.latex(expression),
                                 input=candidate, conditions=tuple(dict.fromkeys(condition_text(restrictions) + tuple(state.conditions))),
                                 warnings=tuple(dict.fromkeys(warnings)),
                                 status="approximate" if not exact and state.status == "evaluated" else state.status,
                                 exact=exact, details=state.details)
+        return result, expression
     except MathechanError:
         raise
     except (ArithmeticError, TypeError, ValueError, RecursionError, NotImplementedError) as error:
         raise MathechanError(f"No se pudo evaluar la expresión: {error}") from error
+
+
+def evaluate(source):
+    """Evaluate one expression without session definitions or assignments."""
+    return _evaluate_node(Parser(source).parse(), source)[0]

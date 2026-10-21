@@ -142,7 +142,23 @@ def check_plot(payload, svg):
     require(payload.get("svg") == svg, "JSON and exported SVG differ.")
 
 
-def smoke_test(executable, timeout=60, scientific=False):
+def check_session_outputs(result, fresh):
+    """Check exact snapshots, failure atomicity, and process-local state."""
+    def values(output):
+        return [part.strip().splitlines()[0]
+                for part in output.split("Mathechan> ")[1:] if part.strip()]
+
+    require(result.returncode == 0 and "Goodbye" in result.stdout,
+            "Session did not exit normally.")
+    require(values(result.stdout)[:6] == ["1/3", "2/3", "5", "2/3", "0", "0"],
+            "Session lost exact values, immediate snapshots, or assignment atomicity.")
+    require("Error:" in result.stderr, "Failed assignment did not report its error.")
+    require(fresh.returncode == 0 and fresh.stderr == "" and "Goodbye" in fresh.stdout,
+            "Fresh session did not exit normally.")
+    require(values(fresh.stdout)[0:1] == ["b"], "Definitions leaked into a fresh process.")
+
+
+def smoke_test(executable, timeout=60, scientific=False, sessions=False):
     executable = Path(executable).resolve(strict=True)
     require(executable.is_file(), "Executable path must be a file.")
     require(math.isfinite(timeout) and timeout > 0, "Timeout must be positive and finite.")
@@ -198,6 +214,11 @@ def smoke_test(executable, timeout=60, scientific=False):
                     raise SmokeTestError(f"Scientific operation did not return JSON: {source}") from error
                 check_scientific_payload(source, payload)
                 checks.append(label)
+        if sessions:
+            result = run(input_text="a=1/3\nb=a+a\na=5\nb\nx=0\nx=1/0\nx\nsalir\n")
+            fresh = run(input_text="b\nsalir\n")
+            check_session_outputs(result, fresh)
+            checks.extend(("session-exact-snapshots-and-atomicity", "fresh-process-isolation"))
     return checks
 
 
@@ -206,9 +227,10 @@ def main(argv=None):
     parser.add_argument("executable", type=Path)
     parser.add_argument("--timeout", type=float, default=60, help="Timeout per invocation in seconds")
     parser.add_argument("--scientific", action="store_true", help="Also verify the nine scientific operations")
+    parser.add_argument("--sessions", action="store_true", help="Also verify numerical assignment sessions")
     args = parser.parse_args(argv)
     try:
-        checks = smoke_test(args.executable, args.timeout, scientific=args.scientific)
+        checks = smoke_test(args.executable, args.timeout, scientific=args.scientific, sessions=args.sessions)
     except (SmokeTestError, OSError) as error:
         parser.exit(1, f"Smoke test failed: {error}\n")
     print("OK: " + ", ".join(checks))

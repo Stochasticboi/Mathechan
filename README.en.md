@@ -46,6 +46,12 @@ These functions belong to **0.1.1**; the earlier 0.1.0 ZIP retains its original
 scope. The graphical interface and dedicated statistical physics tools remain
 pending. See the [0.1.1 release notes](docs/en/releases/0.1.1.md).
 
+A later increment, **under development without a new release**, adds a local
+numeric-variable session and limited immediate assignment. It is not part of
+the published 0.1.1 ZIP and adds no graphical interface. See
+[the language](docs/en/language.md) for scope; individual evaluation remains
+stateless.
+
 ## Downloads and source code
 
 Published versions and their files are available in
