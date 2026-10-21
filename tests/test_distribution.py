@@ -97,6 +97,18 @@ def sine_plot():
 
 
 class SmokeTests(unittest.TestCase):
+    def test_sessions_require_exact_snapshots_and_a_fresh_process(self):
+        output = "Mathechan> 1/3\nMathechan> 2/3\nMathechan> 5\nMathechan> 2/3\nMathechan> 0\nMathechan> Mathechan> 0\nMathechan> Goodbye\n"
+        valid = subprocess.CompletedProcess([], 0, output, "Error: division by zero\n")
+        fresh = subprocess.CompletedProcess([], 0, "Mathechan> b\nMathechan> Goodbye\n", "")
+        smoke.check_session_outputs(valid, fresh)
+        wrong = subprocess.CompletedProcess([], 0, output.replace("2/3", "10"), valid.stderr)
+        with self.assertRaises(smoke.SmokeTestError):
+            smoke.check_session_outputs(wrong, fresh)
+        leaked = subprocess.CompletedProcess([], 0, "Mathechan> 2/3\nMathechan> Goodbye\n", "")
+        with self.assertRaises(smoke.SmokeTestError):
+            smoke.check_session_outputs(valid, leaked)
+
     def test_environment_removes_external_python_paths(self):
         original = {"SystemRoot": "C:\\Windows", "Path": "C:\\Python;C:\\other", "pythonpath": "source",
                     "PYTHONHOME": "runtime", "VIRTUAL_ENV": "environment", "TEMP": "temporary"}

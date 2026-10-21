@@ -45,6 +45,24 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("Goodbye", result.stdout)
         self.assertNotIn("Traceback", result.stderr)
 
+    def test_repl_keeps_immediate_numeric_values_and_atomic_failures(self):
+        result = self.run_launcher(input_text="a=1/3\nb=a+a\na=5\nb\nx=0\nx=1/0\nx\nsalir\n")
+        self.assertEqual(result.returncode, 0)
+        outputs = [part.strip().splitlines()[0] for part in result.stdout.split("Mathechan> ")[1:] if part.strip()]
+        self.assertEqual(outputs[:6], ["1/3", "2/3", "5", "2/3", "0", "0"])
+        self.assertIn("Error:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        fresh = self.run_launcher(input_text="b\nsalir\n")
+        self.assertIn("Mathechan> b\n", fresh.stdout)
+        self.assertEqual(fresh.stderr, "")
+
+    def test_repl_formal_variables_shadow_session_definitions(self):
+        result = self.run_launcher(input_text="x=3\nD[x^2,x]\nSum[x,{x,1,3}]\nSolve[x^2==4,x]\nx\nsalir\n")
+        self.assertEqual(result.returncode, 0)
+        outputs = [part.strip().splitlines()[0] for part in result.stdout.split("Mathechan> ")[1:] if part.strip()]
+        self.assertEqual(outputs[:5], ["3", "2*x", "6", "{-2, 2}", "3"])
+        self.assertEqual(result.stderr, "")
+
     def test_input_argument_keeps_imaginary_constant_reusable(self):
         result = self.run_launcher("Sqrt[-1]", "--input")
         self.assertEqual(result.returncode, 0, result.stderr)

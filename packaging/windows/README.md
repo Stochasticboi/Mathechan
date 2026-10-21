@@ -50,7 +50,7 @@ architecture, dependency list, source revision, and executable checksum.
 The recipe runs the executable acceptance check before reporting success:
 
 ```powershell
-& $buildPython packaging/windows/smoke_test.py dist/Mathechan.exe --timeout 60 --scientific
+& $buildPython packaging/windows/smoke_test.py dist/Mathechan.exe --timeout 60 --scientific --sessions
 ```
 
 The timeout applies to each invocation. The check verifies exact derivative JSON,
@@ -62,7 +62,9 @@ environment, and sets `PATH` to Windows/System32 and Windows. It runs from a
 temporary working directory without the source tree on the Python search path.
 The scientific option adds nine JSON checks for numerical precision, rational
 algebra, substitution, finite sums, integration, equation roots, and ODE/initial
-residuals. All thirteen checks must pass. This checks system-path isolation,
+residuals. The development recipe also uses `--sessions` for exact numerical
+assignment snapshots, failure atomicity, and a fresh process without definitions.
+All fifteen checks must pass. This checks system-path isolation,
 not a separate clean machine.
 
 The Windows CI job uses this recipe and uploads its executable, notices, build
@@ -103,7 +105,9 @@ las 201 muestras contra `math.sin`, sus coordenadas SVG en un lienzo 640×340
 con margen del 5% (tolerancia 0.001) y cálculo interactivo seguido de salida.
 La opción `--scientific`, activada por la receta, añade nueve comprobaciones JSON
 de precisión, álgebra racional, sustitución, sumas, integrales, raíces y residuos
-de EDO/datos iniciales. Deben pasar las trece comprobaciones.
+de EDO/datos iniciales. La receta en desarrollo también usa `--sessions` para
+comprobar asignaciones numéricas exactas e inmediatas, fallos sin mutación y un
+proceso nuevo sin definiciones. Deben pasar las quince comprobaciones.
 Cada invocación tiene un timeout configurable. El proceso elimina `PYTHONPATH`,
 `PYTHONHOME` y variables de entorno virtual; su `PATH` contiene únicamente
 Windows/System32 y Windows. Trabaja en un directorio temporal. Este aislamiento

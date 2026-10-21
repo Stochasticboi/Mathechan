@@ -2,7 +2,29 @@
 
 ## Sin publicar / Unreleased
 
-Sin cambios registrados / No changes recorded.
+### Español
+
+- En desarrollo, sin nueva release: `Session.evaluate` y consola interactiva
+  Windows con asignación inmediata de valores numéricos escalares finitos.
+  Sesiones aisladas, valores capturados al asignar y máximo 64 variables; exactitud racional y
+  precisión Float conservadas. No hay asignación simbólica, funciones del usuario, Clear
+  ni estado en disco.
+- Las variables formales ocultan valores de sesión; los parámetros numéricos
+  externos se aplican. `evaluate(source)` individual sigue sin estado y
+  rechaza `=`; `==` continúa como igualdad inerte. Estas funciones no se
+  atribuyen al ZIP publicado 0.1.1 y no se cambia la versión del paquete.
+
+### English
+
+- Under development, no new release: `Session.evaluate` and the Windows
+  interactive console support immediate assignment of finite numeric scalars.
+  Sessions are isolated and assignments capture values, with at most 64 variables; rational
+  exactness and Float precision are preserved. No symbolic assignment,
+  user-defined functions, Clear, or state persistence is added.
+- Formal variables shadow session values while other numeric parameters apply.
+  Individual `evaluate(source)` remains stateless and rejects `=`; `==`
+  remains inert equality. These capabilities are not attributed to the
+  published 0.1.1 ZIP and the package version is unchanged.
 
 ## 0.1.1 — 2026-10-19
 

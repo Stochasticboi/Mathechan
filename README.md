@@ -46,6 +46,12 @@ su alcance original. La interfaz gráfica y las herramientas especializadas
 de física estadística siguen pendientes. Véanse las
 [notas de 0.1.1](docs/es/versiones/0.1.1.md).
 
+Un incremento posterior, **en desarrollo y sin nueva release**, añade una
+sesión local de variables numéricas y asignación inmediata limitada. No forma
+parte del ZIP publicado 0.1.1 ni incorpora interfaz gráfica. El alcance está
+en [el lenguaje](docs/es/lenguaje.md); la API de evaluación individual sigue
+sin estado.
+
 ## Descargas y código fuente
 
 Las versiones publicadas y sus archivos se encuentran en

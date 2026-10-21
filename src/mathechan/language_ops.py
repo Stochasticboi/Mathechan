@@ -229,19 +229,26 @@ def _solution_domain_checks(outcome, points, dependent, symbol, restrictions, st
     )
 
 
-def scientific_call(node, build, restrictions, state, bindings, functions):
+def scientific_call(node, build, restrictions, state, bindings, functions, definitions=None):
     """Evaluate an admitted call; callbacks retain the parser's safety boundary."""
     from . import algebra
     from .calculus import integrate_expression, solve_equations, solve_ode
 
-    def read(child, target=None, scope=None, allowed=None, child_state=None):
+    definitions = {} if definitions is None else definitions
+
+    def read(child, target=None, scope=None, allowed=None, child_state=None, definition_scope=None):
         return build(
             child,
             restrictions if target is None else target,
             state if child_state is None else child_state,
             bindings if scope is None else scope,
             functions if allowed is None else allowed,
+            definitions if definition_scope is None else definition_scope,
         )
+
+    def shadowed_definitions(*symbols):
+        names = {str(symbol) for symbol in symbols}
+        return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
     if name in ("Factor", "Together", "Cancel"):
@@ -270,7 +277,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
         symbol = variable(node.children[1])
         scope = {key: value for key, value in bindings.items() if key != str(symbol)}
         local = []
-        value = scalar(read(node.children[0], local, scope))
+        value = scalar(read(node.children[0], local, scope,
+                            definition_scope=shadowed_definitions(symbol)))
         result = substitute_bindings(sp.diff(value, symbol), bindings)
         restrictions.extend(
             checked_restrictions(
@@ -285,7 +293,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
         local = []
         child_state = EvaluationState(sum_terms=state.sum_terms)
         expression = scalar(
-            read(node.children[0], local, scope, child_state=child_state)
+            read(node.children[0], local, scope, child_state=child_state,
+                 definition_scope=shadowed_definitions(symbol))
         )
         state.sum_terms = child_state.sum_terms
         replacement = scalar(read(node.children[2]))
@@ -357,7 +366,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
         for index in range(int(lower), int(upper) + 1):
             scope = dict(bindings, **{str(symbol): sp.Integer(index)})
             local = []
-            terms.append(scalar(read(node.children[0], local, scope)))
+            terms.append(scalar(read(node.children[0], local, scope,
+                                     definition_scope=shadowed_definitions(symbol))))
             restrictions.extend(checked_restrictions(local))
         return sp.Add(*terms)
     if name == "Integrate":
@@ -373,7 +383,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
             symbol = variable(specification)
         scope = {key: value for key, value in bindings.items() if key != str(symbol)}
         local = []
-        expression = scalar(read(node.children[0], local, scope))
+        expression = scalar(read(node.children[0], local, scope,
+                                 definition_scope=shadowed_definitions(symbol)))
         outcome = integrate_expression(expression, symbol, bounds)
         state.absorb(outcome)
         if bounds:
@@ -412,10 +423,13 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
             domain_name = domain_node.value
         local = []
         raw_equations = node.children[0]
+        scope = {key: value for key, value in bindings.items() if key not in {str(item) for item in variables}}
+        definition_scope = shadowed_definitions(*variables)
         equations = (
-            [read(item, local) for item in raw_equations.children]
+            [read(item, local, scope, definition_scope=definition_scope)
+             for item in raw_equations.children]
             if raw_equations.kind == "list"
-            else [read(raw_equations, local)]
+            else [read(raw_equations, local, scope, definition_scope=definition_scope)]
         )
         if (
             not equations
@@ -471,10 +485,14 @@ def scientific_call(node, build, restrictions, state, bindings, functions):
         allowed = {dependent_node.value: dependent.func}
         local = []
         raw_equations = node.children[0]
+        scope = {key: value for key, value in bindings.items()
+                 if key not in (str(symbol), dependent_node.value)}
+        definition_scope = shadowed_definitions(symbol, dependent_node.value)
         equations = (
-            [read(item, local, {}, allowed) for item in raw_equations.children]
+            [read(item, local, scope, allowed, definition_scope=definition_scope)
+             for item in raw_equations.children]
             if raw_equations.kind == "list"
-            else [read(raw_equations, local, {}, allowed)]
+            else [read(raw_equations, local, scope, allowed, definition_scope=definition_scope)]
         )
         if (
             not equations

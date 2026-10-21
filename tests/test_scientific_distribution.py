@@ -213,7 +213,7 @@ class ScientificSmokeTests(unittest.TestCase):
             self.assertEqual(
                 smoke.main(["application.exe", "--timeout", "8", "--scientific"]), 0
             )
-        execute.assert_called_once_with(Path("application.exe"), 8.0, scientific=True)
+        execute.assert_called_once_with(Path("application.exe"), 8.0, scientific=True, sessions=False)
 
 
 if __name__ == "__main__":
