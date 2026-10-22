@@ -13,9 +13,19 @@ El proyecto comenzó el **18 de octubre de 2026**, con un horizonte inicial de
 cinco años, hasta octubre de 2031. Su sintaxis toma a Mathematica como referencia,
 con una especificación propia y un alcance definido progresivamente.
 
-## Versión 0.1.1 experimental
+## Código en desarrollo: 0.2.0.dev0
 
-La versión actual funciona **por consola** y utiliza un parser restringido
+El código actual incorpora sesiones persistentes, definiciones simbólicas y
+diferidas, funciones con parámetros locales, hipótesis, `FullSimplify`, `Collect`,
+`Apart`, sistemas algebraicos y `NSolve`. `AnalyzeDomain`, `Reduce` y `CertifiedN`
+exponen análisis acotados con sus condiciones y límites. Consulte el
+[lenguaje](docs/es/lenguaje.md) para conocer la sintaxis y el alcance comprobado.
+El descargable publicado v0.1.1 conserva las capacidades descritas a continuación;
+esta revisión de desarrollo todavía no constituye una nueva versión publicada.
+
+## Descargable 0.1.1 experimental
+
+La versión publicada funciona **por consola** y utiliza un parser restringido
 con evaluación mediante SymPy 1.14. Todavía no tiene interfaz gráfica.
 
 - Aritmética exacta, incluidos decimales interpretados como racionales.

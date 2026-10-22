@@ -2,11 +2,11 @@
 
 [English](../en/language.md)
 
-Este documento describe **Mathechan 0.1.1**. Las operaciones científicas se
-incorporan en esta versión; el ZIP anterior v0.1.0 conserva su alcance original.
+Este documento distingue **Mathechan 0.2.0.dev0 en desarrollo** del descargable
+**0.1.1**. El ZIP anterior v0.1.0 conserva su alcance original.
 Consulte [las notas de versión](versiones/0.1.1.md) y
 [las descargas](../../README.md) antes de elegir una distribución.
-La sección «En desarrollo: sesión numérica» describe un incremento posterior,
+La sección «En desarrollo: lenguaje y sesiones» describe cambios posteriores,
 sin nueva release; no debe atribuirse al ZIP publicado de 0.1.1.
 
 Mathechan 0.1.1 ofrece una consola experimental con un parser propio y evaluación
@@ -56,19 +56,18 @@ reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
 
-## En desarrollo: sesión numérica
+## En desarrollo: lenguaje y sesiones
 
-Este incremento añade estado numérico local en la API `Session` y la consola
+El código en desarrollo añade estado local en la API `Session` y la consola
 interactiva de Windows. Sigue en desarrollo, sin cambio de versión ni nueva
 distribución: el ZIP v0.1.1 conserva la evaluación independiente de cada línea.
 La función `evaluate(source)` continúa sin estado y rechaza asignaciones `=`.
 `==` mantiene su significado de igualdad inerte.
 
 Una sesión admite una asignación inmediata de raíz `nombre=expresión` por
-llamada. El valor debe ser escalar, numérico, finito, sin símbolos libres ni
-condiciones pendientes, y con estado incondicional. Se permiten números exactos
-y aproximaciones Float; se preserva su precisión, sin convertirlos a racionales
-ni a float de máquina para guardarlos.
+llamada. Admite valores escalares numéricos o simbólicos y conserva sus
+restricciones originales. Se permiten números exactos y aproximaciones Float;
+se preserva su precisión, sin convertirlos a racionales ni a float de máquina.
 
 ```python
 from mathechan import Session
@@ -86,26 +85,218 @@ al reasignar `x`. Cada objeto Session es independiente. La API también está en
 asignación devuelve el valor, no una definición simbólica. Las llamadas del
 ejemplo son separadas: no se añade ejecución de scripts con `;`.
 
-El límite es 64 variables por sesión; reasignar una existente no ocupa otra
+El límite es 64 definiciones por sesión; reasignar una existente no ocupa otra
 entrada. Se protegen constantes y nombres de operaciones, incluidos `Pi`, `E`,
-`Infinity`, `Reals` y `Complexes`. Se rechazan listas, ecuaciones,
-resultados condicionados y asignaciones simbólicas como `a=y+1` si `y` no tiene
-valor numérico. Las funciones admitidas pueden calcular valores numéricos;
-eso no crea definiciones de funciones del usuario. No hay `Clear` ni persistencia en disco.
-Cerrar la consola o crear otra sesión no recupera variables de una anterior.
+`Infinity`, `Reals` y `Complexes`. Se admiten escalares, listas, matrices y
+expresiones retenidas; se rechazan ecuaciones y resultados no verificados.
+Una asignación como `a=y+1` conserva una expresión calculada en ese momento.
+Cerrar la consola no guarda automáticamente las variables.
+
+La API `session.save("trabajo.json")` guarda explícitamente el estado, y
+`Session.load("trabajo.json")` crea otra sesión a partir de ese archivo. El
+formato `mathechan-session` v0.1 conserva definiciones, condiciones y bits Float.
+Admite hasta 2 MB y 64 definiciones; rechaza campos desconocidos, claves
+duplicadas y constructores fuera de la lista admitida. Cargar no ejecuta los
+árboles de definiciones diferidas ni las expresiones `Hold`. No usa pickle ni
+interpreta cadenas como código. No es el formato de cuadernos `.mchan`.
+
+`session.evaluate("Clear[x]")` elimina únicamente la definición de `x` en esa
+sesión y libera su entrada; la siguiente evaluación de `x` devuelve el símbolo.
+El nombre se toma sin sustituir su valor. Los valores ya calculados de otras
+variables se conservan: después de `x=2`, `a=x+1` y `Clear[x]`, `a` sigue siendo 3.
+Si el nombre no tiene definición, la llamada no cambia el estado.
+
+`Clear` exige un único nombre de variable y solo se admite como comando
+independiente de sesión. Constantes y nombres de operaciones, incluido `Clear`,
+están protegidos. Argumentos como `Clear[x+1]`, varios nombres o llamadas anidadas
+se rechazan sin borrar valores. El resultado tiene `kind: "session"`,
+`input: null` y `details.clear` con `name` y el booleano `removed`; su texto es una
+confirmación, no una expresión matemática. `evaluate("Clear[x]")` sin sesión
+no está admitido. `ClearAll[]` elimina las definiciones de la sesión; las
+hipótesis se administran por separado con `ClearAssumptions[]`.
+
+`session.evaluate("Definition[x]")` consulta el valor guardado de `x` sin
+evaluarlo de nuevo ni modificar la sesión. Por ejemplo, después de `x=2`,
+`a=x+1` y `x=4`, `Definition[a]` muestra `a = 3`, no la fórmula original.
+Si no existe una definición, lo indica sin crearla; después de `Clear[x]`,
+`Definition[x]` informa que no hay definición.
+
+La consulta exige un único nombre sin evaluar y solo se admite como comando
+independiente de sesión. Los nombres protegidos, incluido `Definition`, y los
+argumentos compuestos o llamadas anidadas se rechazan. `evaluate` sin sesión
+no admite esta consulta. No enumera variables ni describe funciones incorporadas.
+Devuelve `kind: "session"`, `input: null` y `details.definition` con `name` y
+`defined`; cuando existe el valor, añade `value` (texto) y `exact` (booleano).
+El resultado conserva la distinción exacta/aproximada y los dígitos del valor
+almacenado; su `status: "evaluated"` indica una consulta completada. `text` y
+`value` son información para inspección, no entrada reutilizable garantizada.
+Esta consulta no proporciona historial ni restaura valores de otras sesiones.
+
+### Definiciones simbólicas y funciones
+
+Las asignaciones guardan expresiones calculadas, no reglas diferidas. Si se
+ejecuta `f=x^2` y después `x=3`, `f` conserva `x^2`. Para evaluar en un punto,
+usar `Substitute[f,x,3]`. Las condiciones del cálculo original acompañan a la
+definición y se comprueban al sustituir: guardar `f=x/x` no permite después
+`Substitute[f,x,0]`.
+
+`Define[f,{x,y},a*x+y]` define una función con parámetros locales distintos.
+Los valores globales disponibles, como `a`, se capturan al definirla. Se llama
+con `f[2,3]`. `With[{x,y},{2,3},x+y]` evalúa con valores locales simultáneos sin modificar
+los nombres de la sesión. No es la sintaxis completa de Wolfram Language.
+
+`SetDelayed[a,x+1]` guarda una expresión que usa el estado actual al consultar
+`a`. `DefineDelayed[f,{x},expresión]` hace lo mismo para una función.
+`DefinePattern[f,{IntegerPattern[n]},If[n<=1,1,n*f[n-1]]]` permite una función
+recursiva con argumento entero. También existen `RealPattern` y `ScalarPattern`;
+se admite una definición por nombre, sin sobrecargas ni patrones arbitrarios.
+`If[condición,sí,no]` solo evalúa la rama elegida; una condición no decidida
+conserva la llamada retenida. Cada evaluación admite 32 llamadas diferidas
+anidadas y 10000 pasos; excederlos produce un error, no una recursión indefinida.
+
+Si un parámetro y un símbolo capturado tienen el mismo nombre, `Definition`
+usa etiquetas distintas para mostrarlos. Por ejemplo, `a=x` seguido de
+`Define[g,{x},x+a]` conserva el `x` libre de `a`: `g[2]` da `x+2`. La consulta
+muestra `g[arg1] = arg1 + x`; `parameters` conserva el nombre original y
+`parameter_labels` identifica la etiqueta de presentación.
+
+### Hipótesis y lógica
+
+Se admiten `==`, `!=`, `<`, `<=`, `>` y `>=`, y los operadores `And`, `Or`,
+`Not`, con `True` y `False`. Una condición no es una asignación. Las
+pertenencias se expresan con `Element[x,Reals]`, `Complexes`, `Integers` o
+`Element[x,Interval[0,1]]` (intervalo real cerrado).
+
+`Assuming[condición,expresión]`, `Refine[expresión,condición]` y
+`Simplify[expresión,condición]` usan hipótesis locales. Por ejemplo,
+`Refine[Sqrt[x^2],Element[x,Reals]]` da `Abs(x)` y
+`Assuming[x>0,Sqrt[x^2]]` da `x`; sin hipótesis la raíz no se convierte en `x`.
+Las condiciones necesarias se conservan en el resultado.
+
+En una sesión, `Assume[x>0]` agrega una hipótesis persistente en memoria,
+`Assumptions[]` la consulta y `ClearAssumptions[]` la elimina. No afecta a
+otras sesiones. Las contradicciones sencillas se rechazan antes de cambiar
+el estado. No hay un decisor completo de consistencia de condiciones
+multivariables o trascendentes: las hipótesis no decididas siguen siendo
+condiciones, no hechos demostrados por el programa.
+
+Los gráficos comprueban las hipótesis en cada muestra y rechazan las que no
+pueden validar. Una integral definida no usa una rama simplificada bajo
+hipótesis si no puede comprobarlas en todo su intervalo. `Solve` filtra los
+candidatos finitos excluidos por las hipótesis; las familias no verificadas
+conservan condiciones o quedan sin resolver.
+
+### Contenedores, retención y precisión
+
+`Vector[{1,x,3}]` representa un vector columna y `Matrix[{{1,2},{3,4}}]`
+una matriz inmutable rectangular, con hasta 64 elementos escalares. Una lista
+sigue siendo una lista; el álgebra matricial general pertenece a una etapa
+posterior. `Hold[1/0]` conserva el árbol sin ejecutar la división;
+`ReleaseHold[Hold[1/0]]` intenta evaluarlo y detecta el error.
+
+`Display[Pi,8]` cambia el texto de presentación, conservando internamente el
+valor exacto. `N[Pi,50]` sí calcula una aproximación a la precisión solicitada.
+`NumericError[Pi,20]` compara evaluaciones a 20 y 30 dígitos: informa una
+estimación de diferencia absoluta, **no una cota certificada**. Aumentar los
+dígitos no recupera información perdida en entradas aproximadas.
+
+`Log`, `Sqrt`, `ArcSin`, `ArcCos` y `ArcTan` usan ramas principales complejas.
+Se conservan exclusiones conocidas como el cero de `Log`, los puntos ±i de
+`ArcTan` y los polos enteros no positivos de `Gamma`. Los avisos identifican
+el alcance parcial del análisis: no se certifican todos los cortes de rama,
+dominios ni singularidades de expresiones compuestas.
+
+`AnalyzeDomain[expresión,x,Reals]` consulta el dominio real continuo con las
+exclusiones originales. Con `Complexes` informa valores finitos y describe
+cortes de rama conocidos, sin confundirlos con un dominio holomorfo global.
+El campo `details.complete` distingue los casos determinados de los pendientes.
+`CertifiedN[Sqrt[2],40]` añade un intervalo racional y una cota absoluta respecto
+del Float emitido, certificados mediante aislamiento polinómico exacto. Solo
+admite constantes algebraicas reales exactas, grado hasta 32 y 10–200 dígitos;
+no certifica `Pi`, datos Float ni incertidumbre experimental.
+
+`FullSimplify[expresión]` y `FullSimplify[expresión,hipótesis]` comparan candidatos
+de simplificación, combinación racional y trigonometría, verificando su
+equivalencia en el contexto indicado. Tienen un límite de 256 operaciones y
+ocho símbolos; no garantizan una forma mínima universal. Las restricciones
+originales acompañan al resultado y a las definiciones guardadas.
+
+### Álgebra en desarrollo: Collect y Apart
+
+Estas operaciones pertenecen al código en desarrollo, no al ZIP v0.1.1.
+
+| Operación | Ejemplo | Alcance |
+|---|---|---|
+| `Collect[expresión,x]` | `Collect[a*x+b*x+x^2,x]` | Agrupa por potencias de `x`, expandiendo un polinomio acotado sobre Q. |
+| `Apart[expresión,x]` | `Apart[1/(x*(x+1)),x]` | Fracciones parciales racionales respecto de `x`, con parámetros simbólicos. |
+
+Reutilizan los límites de álgebra racional: hasta ocho símbolos, grado 256 y
+estimación de expansión de 4096 términos. No admiten Float ni funciones
+trascendentes. La variable explícita oculta su valor de sesión; se conservan
+las restricciones originales y los ámbitos de índices anidados.
+
+Una descomposición paramétrica puede requerir condiciones adicionales.
+`Apart[1/(x*(x+a)),x]` introduce factores `1/a`: conserva tanto la rama `a!=0`
+como el caso `a=0`, cuyo resultado es `1/x^2`, mediante `Piecewise`. La generación
+automática cubre una degeneración afín de un parámetro. Casos más amplios
+conservan exclusiones explícitas y requieren tratar sus ramas por separado.
+
+### Álgebra en desarrollo: NSolve
+
+`NSolve[ecuación,x]` aproxima las soluciones de una ecuación polinómica o racional
+univariada con coeficientes algebraicos o Float. Por defecto usa `Complexes` y
+30 dígitos solicitados. También admite `NSolve[x^2==2,x,50]`,
+`NSolve[x^2==-1,x,Reals]` y `NSolve[x^2==2,x,Reals,50]`.
+
+Este incremento admite grado de numerador hasta 32 y precisión entera de 10 a
+200 dígitos, conservando los límites de crecimiento del álgebra racional.
+Los datos Float conservan su precisión de entrada: pedir más dígitos no la
+recupera. Los decimales literales siguen siendo racionales exactos del lenguaje.
+`NSolve[{x^2+y^2==1,x-y==0},{x,y},Reals,40]` admite sistemas polinómicos de
+hasta ocho variables y ecuaciones, grado total hasta ocho. Las familias
+continuas no se convierten en una lista artificial de puntos.
+
+`NSolve[Cos[x]==x,x,{1},40]` solicita una búsqueda local desde el inicio 1.
+Para sistemas, proporcionar una lista de inicios; la forma
+`NSolve[ecuaciones,variables,Reals,40,{inicios}]` fija además el dominio.
+El resultado lleva `completeness: false`: un residuo pequeño no prueba que se
+hayan encontrado todas las raíces ni unicidad global. Parámetros libres quedan
+condicionados o requieren valores antes de la búsqueda numérica.
+
+Primero se aíslan las raíces exactas del polinomio; se comprueban dominio,
+exclusiones originales e hipótesis antes de aproximarlas. El resultado incluye
+multiplicidades y diagnósticos de residuos. Un residuo normalizado pequeño es
+una comprobación numérica, no una cota certificada del error de cada raíz ni
+una garantía de buen condicionamiento. Las condiciones no decididas y las
+aproximaciones que no pasan las comprobaciones se indican expresamente.
+Las identidades no se convierten en una lista finita ficticia: conservan el
+conjunto de soluciones correspondiente, o un conjunto condicionado pendiente.
+
+Las aproximaciones tienen `input: null`; el texto no se presenta como entrada
+exacta reutilizable. `NSolve` está disponible en el código en desarrollo, no
+en el ZIP publicado v0.1.1.
+
+`Solve` admite también sistemas polinómicos no lineales acotados y verifica
+candidatos por sustitución. Con coeficientes simbólicos de grado uno o dos,
+`details.branches` separa los casos de coeficiente principal nulo, solución
+genérica, identidad y contradicción; el conjunto global conserva sus condiciones.
+`Reduce[condición,x,Reals]` reduce condiciones univariadas y conserva
+`ConditionSet` cuando no puede decidirlas. No es un decisor universal de lógica
+o sistemas algebraicos.
 
 ### Variables ligadas y contexto de resultados
 
-Las variables formales de `D`, `Sum`, `Integrate`, `Solve`, `DSolve` y `Plot`
+Las variables formales de `D`, `Sum`, `Integrate`, `Solve`, `NSolve`, `DSolve` y `Plot`
 ocultan el valor global del mismo nombre en su ámbito; los otros parámetros
 numéricos de sesión sí se aplican. Con `x=3`, `D[x^2,x]` devuelve `2*x` e
 `Integrate[x,x]` muestra `x**2/2`, no derivada cero ni una integral de la constante
 3. Para evaluar la derivada en 3 se utiliza `Substitute[D[x^2,x],x,3]`.
-El resultado simbólico de `D[x^2,x]` no puede almacenarse mediante `a=D[x^2,x]`.
+El resultado simbólico puede guardarse mediante `a=D[x^2,x]` como un snapshot
+de `2*x`, con las reglas de asignación inmediata descritas arriba.
 
 Los índices de sumas anidadas conservan su ámbito local. Por ejemplo,
 `Sum[D[n^2,n],{n,1,3}]` sigue devolviendo 12; una variable de sesión `n`
-no sustituye el índice ligado. Esta regla no añade asignaciones simbólicas.
+no sustituye el índice ligado. Las definiciones conservan esta distinción de ámbitos.
 
 `input` conserva su contrato de reutilización **sin estado**. Volver a introducir
 una salida simbólica en una sesión puede cambiarla por sus valores globales:
@@ -231,7 +422,7 @@ La consola interactiva muestra un resumen de `Plot`; exportar SVG requiere
 `--output` en un comando. No abre automáticamente ventanas de gráficos.
 Al instalar el paquete Python también puede usarse `python -m mathechan` con
 los mismos argumentos; ese comando requiere una expresión o `--demo`.
-La sesión numérica descrita arriba corresponde al incremento en desarrollo:
+El lenguaje y las sesiones descritos arriba corresponden al código en desarrollo:
 la distribución publicada 0.1.1 y los comandos individuales permanecen sin estado.
 
 `--input` emite solo entrada reutilizable en stdout y condiciones/avisos en

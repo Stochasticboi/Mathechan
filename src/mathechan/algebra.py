@@ -147,6 +147,51 @@ def cancel_expression(expression):
     return sp.cancel(expression, domain=sp.QQ)
 
 
+def collect_expression(expression, symbol):
+    """Collect a bounded polynomial over Q by powers of one explicit variable."""
+    expression = _rational_expression(expression, polynomial=True)
+    if not isinstance(symbol, sp.Symbol) or symbol.is_commutative is not True:
+        raise ValueError("Collect requiere un símbolo escalar como variable.")
+    return sp.collect(sp.expand(expression), symbol)
+
+
+def apart_expression(expression, symbol):
+    """Partial fractions in one variable, retaining symbolic rational parameters."""
+    expression = _rational_expression(expression)
+    if not isinstance(symbol, sp.Symbol) or symbol.is_commutative is not True:
+        raise ValueError("Apart requiere un símbolo escalar como variable.")
+    return sp.apart(expression, symbol)
+
+
+def apart_parameter_branches(expression, symbol, result):
+    """Cover a single affine parameter degeneracy; leave larger cases explicit."""
+    factors = set()
+    for term in sp.Add.make_args(result):
+        for factor, _ in sp.factor_list(term.as_numer_denom()[1])[1]:
+            if factor.free_symbols and symbol not in factor.free_symbols:
+                factors.add(factor)
+    if len(factors) != 1:
+        return result, ()
+    factor = next(iter(factors))
+    if len(factor.free_symbols) != 1:
+        return result, ()
+    parameter = next(iter(factor.free_symbols))
+    polynomial = sp.Poly(factor, parameter)
+    if polynomial.degree() != 1:
+        return result, ()
+    special_value = -polynomial.nth(0) / polynomial.nth(1)
+    special = expression.subs(parameter, special_value)
+    if special.has(sp.zoo, sp.nan, sp.oo, -sp.oo):
+        return result, ()
+    special = apart_expression(special, symbol)
+    condition = sp.Ne(parameter, special_value)
+    branches = (
+        {"condition": sp.sstr(condition), "value": sp.sstr(result)},
+        {"condition": sp.sstr(sp.Eq(parameter, special_value)), "value": sp.sstr(special)},
+    )
+    return sp.Piecewise((result, condition), (special, True), evaluate=False), branches
+
+
 def substitute_expression(expression, symbol, value):
     """Perform one exact simultaneous substitution on constructed scalars.
 

@@ -72,14 +72,10 @@ class SessionAssignmentTests(unittest.TestCase):
         session.evaluate("x=5")
         for source in (
             "x=1/0",
-            "x=y+1",
-            "x={1,2}",
             "x=(1==1)",
             "x=Infinity",
             "x=Solve[t==1,t]",
             "x=Plot[t,{t,0,1}]",
-            "x=Integrate[0,{t,0,a}]",
-            "x=x/x+(z/z)",
             "x=y=1",
             "x=(y=1)",
             "x=2; y=3",

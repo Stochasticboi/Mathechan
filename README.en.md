@@ -13,9 +13,19 @@ The project began on **18 October 2026**, with an initial five-year horizon
 through October 2031. Its syntax takes Mathematica as a reference, with its
 own specification and a scope developed incrementally.
 
-## Experimental version 0.1.1
+## Development code: 0.2.0.dev0
 
-The current version runs **from the command line**, using a restricted parser
+The current source includes persistent sessions, immediate and deferred symbolic
+definitions, functions with local parameters, assumptions, `FullSimplify`,
+`Collect`, `Apart`, algebraic systems, and `NSolve`. `AnalyzeDomain`, `Reduce`,
+and `CertifiedN` expose bounded analyses with explicit conditions and limits.
+See the [language reference](docs/en/language.md) for syntax and verified scope.
+The published v0.1.1 download retains the capabilities described below; this
+development revision is not a new published release.
+
+## Experimental 0.1.1 download
+
+The published version runs **from the command line**, using a restricted parser
 and SymPy 1.14 for evaluation. It does not yet have a graphical interface.
 
 - Exact arithmetic, including decimals interpreted as rational numbers.

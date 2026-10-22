@@ -4,18 +4,26 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
-from .domains import condition_text
+from .domains import condition_text, require_nonzero
 
 SCIENTIFIC_CALLS = frozenset(
     {
         "N",
+        "If",
+        "FullSimplify",
+        "AnalyzeDomain",
+        "CertifiedN",
+        "Reduce",
         "Factor",
         "Together",
         "Cancel",
+        "Collect",
+        "Apart",
         "Substitute",
         "Sum",
         "Integrate",
         "Solve",
+        "NSolve",
         "DSolve",
         "D",
     }
@@ -35,6 +43,9 @@ class EvaluationState:
     requirements: list = field(default_factory=list)
     details: dict = field(default_factory=dict)
     sum_terms: int = 0
+    assumptions: object = sp.true
+    call_depth: int = 0
+    steps: int = 0
 
     def mark_status(self, status):
         priority = {
@@ -56,7 +67,9 @@ class EvaluationState:
 
 
 def variable(node):
-    if node.kind != "name" or node.value in ("Pi", "E", "Infinity"):
+    if node.kind != "name" or node.value in (
+        "Pi", "E", "Infinity", "Reals", "Complexes", "Integers", "True", "False"
+    ):
         raise ValueError("Se requiere un símbolo como variable.")
     return sp.Symbol(node.value)
 
@@ -101,7 +114,7 @@ def _filter_solutions(outcome, variables, restrictions, domain, state):
     result = outcome.value
     if not restrictions or not isinstance(result, sp.Set):
         return result
-    tuple_candidates = outcome.details.get("method") == "sympy.linsolve"
+    tuple_candidates = outcome.details.get("method") in ("sympy.linsolve", "sympy.nonlinsolve")
     if tuple_candidates and not isinstance(result, sp.FiniteSet):
         state.mark_status("conditional")
         state.warnings.append(
@@ -140,6 +153,60 @@ def _filter_solutions(outcome, variables, restrictions, domain, state):
             kept.append(solution)
         result = sp.FiniteSet(*kept)
     return result
+
+
+def _hypothesis_solutions(result, variables, state):
+    """Do not present a candidate excluded by the active mathematical context."""
+    condition = sp.And(state.assumptions, *state.requirements)
+    if condition is sp.true or not condition.free_symbols.intersection(variables):
+        return result
+    if isinstance(result, sp.FiniteSet):
+        kept = []
+        for candidate in result:
+            values = tuple(candidate) if isinstance(candidate, sp.Tuple) else (candidate,)
+            if len(values) != len(variables):
+                state.mark_status("unresolved")
+                return result
+            verdict = sp.simplify(condition.subs(dict(zip(variables, values)), simultaneous=True))
+            if verdict is not sp.false:
+                kept.append(candidate)
+                if verdict is not sp.true:
+                    state.mark_status("conditional")
+        return sp.FiniteSet(*kept)
+    if len(variables) == 1:
+        state.mark_status("unresolved")
+        return sp.ConditionSet(variables[0], condition, result)
+    state.mark_status("unresolved")
+    state.warnings.append("La familia de soluciones conserva hipótesis que no se pudieron filtrar.")
+    return result
+
+
+def _check_integral_hypotheses(symbol, bounds, state):
+    """A branch chosen under assumptions must be valid on the whole real interval."""
+    for condition in (state.assumptions, *state.requirements):
+        if symbol not in condition.free_symbols:
+            continue
+        normalized = condition.replace(
+            lambda item: isinstance(item, sp.Contains) and item.args[0] == symbol
+            and item.args[1] in (sp.S.Reals, sp.S.Complexes),
+            lambda item: sp.true,
+        ).replace(
+            lambda item: isinstance(item, sp.Contains) and isinstance(item.args[1], sp.Interval),
+            lambda item: item.args[1].as_relational(item.args[0]),
+        )
+        clauses = [part for part in sp.And.make_args(normalized) if symbol in part.free_symbols]
+        if not clauses:
+            continue
+        try:
+            interval = sp.Interval(sp.Min(*bounds), sp.Max(*bounds))
+            permitted = sp.reduce_inequalities(clauses, symbol).as_set()
+            valid = interval.is_subset(permitted)
+        except (ValueError, TypeError, NotImplementedError):
+            valid = None
+        if valid is not True:
+            raise ValueError(
+                "No se pueden verificar las hipótesis del integrando en todo el intervalo."
+            )
 
 
 def _initial_domain_checks(equations, dependent, symbol, restrictions):
@@ -251,6 +318,75 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name == "FullSimplify":
+        from .assumptions import combine_assumptions
+        from .simplification import full_simplify_expression
+
+        arity(node, 1, 2)
+        previous = state.assumptions
+        if len(node.children) == 2:
+            condition = read(node.children[1])
+            state.assumptions = combine_assumptions(previous, condition)
+            if condition is not sp.true:
+                state.requirements.append(condition)
+                state.conditions.append(sp.sstr(condition))
+                state.mark_status("conditional")
+        local = []
+        try:
+            expression = scalar(read(node.children[0], local))
+            outcome = full_simplify_expression(expression, state.assumptions,
+                                               restrictions=tuple(local),
+                                               requirements=tuple(state.requirements))
+        finally:
+            state.assumptions = previous
+        restrictions.extend(local)
+        state.absorb(outcome)
+        return outcome.value
+    if name == "CertifiedN":
+        from .certified_numeric import certified_numerical
+
+        arity(node, 1, 2)
+        precision = read(node.children[1]) if len(node.children) == 2 else sp.Integer(30)
+        outcome = certified_numerical(scalar(read(node.children[0])), precision)
+        state.absorb(outcome)
+        return outcome.value
+    if name in ("AnalyzeDomain", "Reduce"):
+        arity(node, 2, 3)
+        specification = node.children[1]
+        variables = ([variable(child) for child in specification.children]
+                     if specification.kind == "list" else [variable(specification)])
+        if not variables or len(variables) > 8 or len(set(variables)) != len(variables):
+            raise ValueError("Se requieren de una a ocho variables distintas.")
+        domain_name = "Reals"
+        if len(node.children) == 3:
+            domain_node = node.children[2]
+            if domain_node.kind != "name" or domain_node.value not in ("Reals", "Complexes"):
+                raise ValueError("El dominio debe ser Reals o Complexes.")
+            domain_name = domain_node.value
+        scope = {key: item for key, item in bindings.items()
+                 if key not in {str(symbol) for symbol in variables}}
+        local = []
+        expression = read(node.children[0], local, scope,
+                          definition_scope=shadowed_definitions(*variables))
+        if name == "AnalyzeDomain":
+            from .domain_analysis import analyze_domain
+
+            if len(variables) != 1:
+                raise ValueError("AnalyzeDomain admite una variable por consulta.")
+            outcome = analyze_domain(scalar(expression), variables[0], domain_name,
+                                     restrictions=tuple(local),
+                                     requirements=tuple(state.requirements) + (state.assumptions,))
+        else:
+            from .symbolic_systems import reduce_conditions
+
+            if isinstance(expression, sp.Tuple):
+                expression = sp.And(*expression)
+            condition = sp.And(expression, state.assumptions, *state.requirements,
+                               *(sp.Ne(item, 0) for item in local))
+            outcome = reduce_conditions(condition, variables, domain_name)
+        state.absorb(outcome)
+        state.details["original_conditions"] = list(condition_text(local))
+        return outcome.value
     if name in ("Factor", "Together", "Cancel"):
         arity(node, 1)
         operation = {
@@ -259,6 +395,39 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             "Cancel": algebra.cancel_expression,
         }[name]
         return operation(scalar(read(node.children[0])))
+    if name in ("Collect", "Apart"):
+        arity(node, 2)
+        symbol = variable(node.children[1])
+        scope = {key: value for key, value in bindings.items() if key != str(symbol)}
+        local = []
+        expression = scalar(read(node.children[0], local, scope=scope,
+                                 definition_scope=shadowed_definitions(symbol)))
+        operation = algebra.collect_expression if name == "Collect" else algebra.apart_expression
+        result = operation(expression, symbol)
+        if name == "Apart":
+            result, branches = algebra.apart_parameter_branches(expression, symbol, result)
+            if branches:
+                state.mark_status("conditional")
+                state.details["apart_branches"] = list(branches)
+                state.warnings.append("Apart conserva la rama genérica y el caso degenerado del parámetro en Piecewise.")
+            parameter_conditions = []
+            for term in sp.Add.make_args(result):
+                denominator = term.as_numer_denom()[1]
+                require_nonzero(denominator, local)
+                for factor, _ in sp.factor_list(denominator)[1]:
+                    if factor.free_symbols and symbol not in factor.free_symbols:
+                        parameter_conditions.append(factor)
+            if parameter_conditions:
+                state.mark_status("conditional")
+                state.details["apart_parameter_exclusions"] = list(condition_text(parameter_conditions))
+                state.warnings.append(
+                    "La descomposición requiere las exclusiones de parámetros indicadas; "
+                    "para casos degenerados, sustituya los parámetros antes de usar Apart."
+                )
+        restrictions.extend(checked_restrictions(
+            [substitute_bindings(item, bindings) for item in local]
+        ))
+        return substitute_bindings(result, bindings)
     if name == "N":
         arity(node, 1, 2)
         precision = (
@@ -291,12 +460,14 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         symbol = variable(node.children[1])
         scope = {key: value for key, value in bindings.items() if key != str(symbol)}
         local = []
-        child_state = EvaluationState(sum_terms=state.sum_terms)
+        child_state = EvaluationState(sum_terms=state.sum_terms, assumptions=state.assumptions,
+                                      call_depth=state.call_depth, steps=state.steps)
         expression = scalar(
             read(node.children[0], local, scope, child_state=child_state,
                  definition_scope=shadowed_definitions(symbol))
         )
         state.sum_terms = child_state.sum_terms
+        state.steps = child_state.steps
         replacement = scalar(read(node.children[2]))
         result = algebra.substitute_expression(expression, symbol, replacement)
         substituted = [
@@ -385,6 +556,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         local = []
         expression = scalar(read(node.children[0], local, scope,
                                  definition_scope=shadowed_definitions(symbol)))
+        if bounds:
+            _check_integral_hypotheses(symbol, bounds, state)
         outcome = integrate_expression(expression, symbol, bounds)
         state.absorb(outcome)
         if bounds:
@@ -402,6 +575,56 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
                 "Las exclusiones del integrando en su variable ligada no son condiciones libres del resultado."
             )
         return substitute_bindings(outcome.value, bindings)
+    if name == "NSolve":
+        from .numeric_solve import solve_numerically
+        from .numeric_systems import solve_system_numerically
+
+        arity(node, 2, 3, 4, 5)
+        variable_node = node.children[1]
+        variables = ([variable(child) for child in variable_node.children]
+                     if variable_node.kind == "list" else [variable(variable_node)])
+        if not variables or len(variables) > 8 or len(set(variables)) != len(variables):
+            raise ValueError("NSolve requiere de una a ocho variables distintas.")
+        domain_name, precision = "Complexes", sp.Integer(30)
+        initial = None
+        if len(node.children) >= 3:
+            option = node.children[2]
+            if option.kind == "name" and option.value in ("Reals", "Complexes"):
+                domain_name = option.value
+            elif option.kind == "list" and len(node.children) <= 4:
+                initial = tuple(read(child) for child in option.children)
+            elif len(node.children) == 3:
+                precision = read(option)
+            else:
+                raise ValueError("Use NSolve[ecuación,variable,Reals o Complexes,precisión].")
+        if len(node.children) >= 4:
+            precision = read(node.children[3])
+        if len(node.children) == 5:
+            seed = node.children[4]
+            if seed.kind != "list":
+                raise ValueError("La aproximación inicial debe ser una lista.")
+            initial = tuple(read(child) for child in seed.children)
+        local = []
+        scope = {key: value for key, value in bindings.items()
+                 if key not in {str(symbol) for symbol in variables}}
+        raw = node.children[0]
+        equations = ([read(child, local, scope, definition_scope=shadowed_definitions(*variables))
+                      for child in raw.children] if raw.kind == "list" else
+                     [read(raw, local, scope, definition_scope=shadowed_definitions(*variables))])
+        if not equations or not all(isinstance(equation, sp.Equality) for equation in equations):
+            raise ValueError("NSolve requiere ecuaciones con ==.")
+        options = dict(restrictions=tuple(local), requirements=tuple(state.requirements),
+                       assumptions=state.assumptions, initial=initial)
+        if len(variables) == 1 and len(equations) == 1:
+            outcome = solve_numerically(equations[0], variables[0], precision, domain_name, **options)
+        else:
+            outcome = solve_system_numerically(equations, variables, precision, domain_name, **options)
+        state.absorb(outcome)
+        state.details["variables"] = [str(symbol) for symbol in variables]
+        state.details["original_conditions"] = list(condition_text(local))
+        state.conditions.extend("Dominio original de la ecuación: " + item
+                                for item in condition_text(local))
+        return outcome.value
     if name == "Solve":
         arity(node, 2, 3)
         raw_variables = node.children[1]
@@ -443,6 +666,7 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         state.absorb(outcome)
         domain = sp.S.Reals if domain_name == "Reals" else sp.S.Complexes
         result = _filter_solutions(outcome, variables, local, domain, state)
+        result = _hypothesis_solutions(result, variables, state)
         state.details["variables"] = [str(item) for item in variables]
         state.details["original_conditions"] = list(condition_text(local))
         state.conditions.extend(
@@ -454,6 +678,10 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             state.status = "no_solution"
         return result
     if name == "DSolve":
+        from .kernel import FUNCTIONS
+        from .assumptions import ASSUMPTION_CALLS
+        from .semantic_types import SEMANTIC_CALLS
+
         arity(node, 3)
         symbol = variable(node.children[2])
         dependent_node = node.children[1]
@@ -461,7 +689,7 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             dependent_node.kind != "call"
             or len(dependent_node.children) != 1
             or dependent_node.value
-            in SCIENTIFIC_CALLS
+            in SCIENTIFIC_CALLS | frozenset(FUNCTIONS) | ASSUMPTION_CALLS | SEMANTIC_CALLS
             | {
                 "Sin",
                 "Cos",
