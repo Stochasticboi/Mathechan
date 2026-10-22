@@ -1,6 +1,6 @@
 # Versiones / Releases
 
-## 0.2.0.dev0 — Sin publicar / Unreleased
+## 0.2.0.dev0 — 2026-10-22 (preliminar / preview)
 
 ### Español
 
@@ -12,7 +12,8 @@
   con aislamiento algebraico o búsqueda local desde un inicio indicado.
 - `CertifiedN` produce intervalos y cotas racionales para constantes algebraicas
   reales; `NumericError` sigue siendo una estimación sin certificación.
-- La revisión de desarrollo no modifica los descargables publicados v0.1.1.
+- Distribución preliminar de consola para Windows x64, código fuente y sumas
+  SHA-256. Los archivos publicados de v0.1.1 se conservan.
 
 ### English
 
@@ -24,7 +25,8 @@
   using algebraic isolation or a local search from a supplied initial point.
 - `CertifiedN` provides rational enclosures and bounds for real algebraic
   constants; `NumericError` remains an uncertified estimate.
-- This development revision does not change published v0.1.1 downloads.
+- Preview console distribution for Windows x64, source code and SHA-256
+  checksums. Previously published v0.1.1 assets are preserved.
 
 ## 0.1.1 — 2026-10-19
 

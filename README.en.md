@@ -13,17 +13,17 @@ The project began on **18 October 2026**, with an initial five-year horizon
 through October 2031. Its syntax takes Mathematica as a reference, with its
 own specification and a scope developed incrementally.
 
-## Development code: 0.2.0.dev0
+## Preview version 0.2.0.dev0
 
 The current source includes persistent sessions, immediate and deferred symbolic
 definitions, functions with local parameters, assumptions, `FullSimplify`,
 `Collect`, `Apart`, algebraic systems, and `NSolve`. `AnalyzeDomain`, `Reduce`,
 and `CertifiedN` expose bounded analyses with explicit conditions and limits.
 See the [language reference](docs/en/language.md) for syntax and verified scope.
-The published v0.1.1 download retains the capabilities described below; this
-development revision is not a new published release.
+These functions are included in the [0.2.0-dev0 preview release](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
+Earlier downloads retain their original scope.
 
-## Experimental 0.1.1 download
+## Experimental console
 
 The published version runs **from the command line**, using a restricted parser
 and SymPy 1.14 for evaluation. It does not yet have a graphical interface.
@@ -56,21 +56,19 @@ These functions belong to **0.1.1**; the earlier 0.1.0 ZIP retains its original
 scope. The graphical interface and dedicated statistical physics tools remain
 pending. See the [0.1.1 release notes](docs/en/releases/0.1.1.md).
 
-A later increment, **under development without a new release**, adds a local
-numeric-variable session and limited immediate assignment. It is not part of
-the published 0.1.1 ZIP and adds no graphical interface. See
-[the language](docs/en/language.md) for scope; individual evaluation remains
-stateless.
+The 0.2.0.dev0 console maintains a session with definitions and assumptions.
+The individual evaluation API remains stateless. See
+[the language](docs/en/language.md) for scope.
 
 ## Downloads and source code
 
 Published versions and their files are available in
-[Releases](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.1.1).
+[Releases](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
 For Windows x64, download the
-[ZIP archive](https://github.com/Stochasticboi/Mathechan/releases/download/v0.1.1/Mathechan-0.1.1-windows-x64.zip),
+[ZIP archive](https://github.com/Stochasticboi/Mathechan/releases/download/v0.2.0-dev0/Mathechan-0.2.0-dev0-windows-x64.zip),
 extract it and open `Mathechan.exe`. It opens an interactive console.
 The graphical interface is still under development. Release notes describe
-the Python packages, source code and checks performed.
+source code, SHA-256 checksums and checks performed.
 
 Installation from source requires Python 3.11 or later. From the repository
 directory, preferably in a virtual environment:
