@@ -1,30 +1,30 @@
 # Versiones / Releases
 
-## Sin publicar / Unreleased
+## 0.2.0.dev0 — Sin publicar / Unreleased
 
 ### Español
 
-- En desarrollo, sin nueva release: `Session.evaluate` y consola interactiva
-  Windows con asignación inmediata de valores numéricos escalares finitos.
-  Sesiones aisladas, valores capturados al asignar y máximo 64 variables; exactitud racional y
-  precisión Float conservadas. No hay asignación simbólica, funciones del usuario, Clear
-  ni estado en disco.
-- Las variables formales ocultan valores de sesión; los parámetros numéricos
-  externos se aplican. `evaluate(source)` individual sigue sin estado y
-  rechaza `=`; `==` continúa como igualdad inerte. Estas funciones no se
-  atribuyen al ZIP publicado 0.1.1 y no se cambia la versión del paquete.
+- Sesiones con asignaciones simbólicas, contenedores, funciones inmediatas y
+  diferidas, patrones escalares acotados y guardado explícito en JSON validado.
+- Hipótesis locales y persistentes, restricciones originales conservadas,
+  `FullSimplify`, `Collect`, `Apart`, `Reduce` y `AnalyzeDomain` con alcance explícito.
+- Sistemas polinómicos no lineales, ramas degeneradas de coeficientes y `NSolve`
+  con aislamiento algebraico o búsqueda local desde un inicio indicado.
+- `CertifiedN` produce intervalos y cotas racionales para constantes algebraicas
+  reales; `NumericError` sigue siendo una estimación sin certificación.
+- La revisión de desarrollo no modifica los descargables publicados v0.1.1.
 
 ### English
 
-- Under development, no new release: `Session.evaluate` and the Windows
-  interactive console support immediate assignment of finite numeric scalars.
-  Sessions are isolated and assignments capture values, with at most 64 variables; rational
-  exactness and Float precision are preserved. No symbolic assignment,
-  user-defined functions, Clear, or state persistence is added.
-- Formal variables shadow session values while other numeric parameters apply.
-  Individual `evaluate(source)` remains stateless and rejects `=`; `==`
-  remains inert equality. These capabilities are not attributed to the
-  published 0.1.1 ZIP and the package version is unchanged.
+- Sessions support symbolic assignments, containers, immediate and deferred
+  functions, bounded scalar patterns, and explicit validated JSON persistence.
+- Local and persistent assumptions, retained original restrictions, `FullSimplify`,
+  `Collect`, `Apart`, `Reduce`, and `AnalyzeDomain` with explicit scope.
+- Nonlinear polynomial systems, coefficient-degeneracy branches, and `NSolve`
+  using algebraic isolation or a local search from a supplied initial point.
+- `CertifiedN` provides rational enclosures and bounds for real algebraic
+  constants; `NumericError` remains an uncertified estimate.
+- This development revision does not change published v0.1.1 downloads.
 
 ## 0.1.1 — 2026-10-19
 

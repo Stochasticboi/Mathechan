@@ -155,11 +155,12 @@ class AlgebraicSolveTests(unittest.TestCase):
         self.assertIs(result.value.condition.subs(a, 0), sp.S.true)
         self.assertIs(result.value.condition.subs({a: 1, self.x: 7}), sp.S.false)
 
-    def test_invalid_domain_and_nonlinear_system_have_controlled_errors(self):
+    def test_invalid_domain_and_nonlinear_family(self):
         with self.assertRaises(ValueError):
             solve_equations(sp.Eq(self.x, 1), self.x, "Integers")
-        with self.assertRaises(NotImplementedError):
-            solve_equations([sp.Eq(self.x**2 + self.y, 1)], [self.x, self.y])
+        outcome = solve_equations([sp.Eq(self.x**2 + self.y, 1)], [self.x, self.y])
+        self.assertIn(outcome.status, ("conditional", "unresolved"))
+        self.assertTrue(outcome.conditions or outcome.warnings)
 
 
 class OdeTests(unittest.TestCase):

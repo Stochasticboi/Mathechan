@@ -11,6 +11,9 @@ import sympy as sp
 from .domains import condition_text, require_nonzero, restrictions_at
 from .language_ops import SCIENTIFIC_CALLS, EvaluationState, scientific_call
 from .printer import expression_input
+from .assumptions import ASSUMPTION_CALLS, assumption_call, refine_expression, validate_assumptions
+from .definitions import DeferredDefinition, DeferredFunction, StoredDefinition, UserFunction
+from .semantic_types import SEMANTIC_CALLS, HeldExpression, semantic_call, track_function_domain
 
 
 class MathechanError(ValueError):
@@ -51,7 +54,7 @@ class EvaluationResult:
         return result
 
 
-TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(==|[=+*/^(),\[\]{}-]))")
+TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(==|!=|<=|>=|[<>=+*/^(),\[\]{}-]))")
 
 
 class Parser:
@@ -121,14 +124,15 @@ class Parser:
                 left = Node("name", token)
         else:
             raise MathechanError(f"Inicio de expresión no admitido: {token}.")
-        precedence = {"==": 5, "+": 10, "-": 10, "*": 20, "/": 20, "^": 30}
+        comparisons = {"==", "!=", "<", "<=", ">", ">="}
+        precedence = {**dict.fromkeys(comparisons, 5), "+": 10, "-": 10, "*": 20, "/": 20, "^": 30}
         while self.peek() in precedence and precedence[self.peek()] >= minimum:
             operator = self.take()
             binding = precedence[operator]
             right = self.expression(binding if operator == "^" else binding + 1)
-            if operator == "==" and ((left.kind == "binary" and left.value == "==")
-                                      or (right.kind == "binary" and right.value == "==")):
-                raise MathechanError("No se admiten cadenas de igualdades; use una lista de ecuaciones.")
+            if operator in comparisons and ((left.kind == "binary" and left.value in comparisons)
+                                      or (right.kind == "binary" and right.value in comparisons)):
+                raise MathechanError("No se admiten cadenas de comparaciones; use And o una lista.")
             left = Node("binary", operator, (left, right))
         self.depth -= 1
         return left
@@ -147,8 +151,28 @@ class Parser:
 
 FUNCTIONS = {
     "Sin": sp.sin, "Cos": sp.cos, "Exp": sp.exp, "Log": sp.log,
-    "Sqrt": sp.sqrt, "Expand": sp.expand, "Simplify": sp.simplify,
+    "Sqrt": sp.sqrt, "Abs": sp.Abs, "Expand": sp.expand, "Simplify": sp.simplify,
 }
+
+
+def _stored_value(stored, replacements, restrictions, state):
+    """Use immutable snapshots while carrying their original domain conditions."""
+    value = stored.value.xreplace(replacements)
+    for item in stored.restrictions:
+        transformed = item.xreplace(replacements)
+        if transformed.is_zero is True or transformed.has(sp.zoo, sp.nan):
+            raise MathechanError("El valor viola una restricción de la definición original.")
+        require_nonzero(transformed, restrictions)
+    for item in stored.requirements:
+        transformed = sp.simplify(item.xreplace(replacements))
+        if transformed is sp.false:
+            raise MathechanError("El valor viola una condición de la definición original.")
+        if transformed is not sp.true:
+            state.requirements.append(transformed)
+            state.conditions.append(sp.sstr(transformed))
+            state.mark_status("conditional")
+    state.warnings.extend(stored.warnings)
+    return value
 
 
 def build(node, restrictions=None, state=None, bindings=None, functions=None, definitions=None):
@@ -158,9 +182,21 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
     functions = {} if functions is None else functions
     definitions = {} if definitions is None else definitions
     restrictions = [] if restrictions is None else restrictions
+    state.steps += 1
+    if state.steps > 10000:
+        raise MathechanError("La evaluación excede el presupuesto de 10000 pasos.")
 
     def read(child):
         return build(child, restrictions, state, bindings, functions, definitions)
+
+    def deferred(body, scope):
+        if state.call_depth >= 32:
+            raise MathechanError("La evaluación diferida excede 32 llamadas anidadas.")
+        state.call_depth += 1
+        try:
+            return build(body, restrictions, state, scope, functions, definitions)
+        finally:
+            state.call_depth -= 1
 
     if node.kind == "number":
         rational = Fraction(node.value)
@@ -169,8 +205,22 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
         if node.value in bindings:
             return bindings[node.value]
         if node.value in definitions:
-            return definitions[node.value]
-        return {"Pi": sp.pi, "E": sp.E, "Infinity": sp.oo}.get(node.value, sp.Symbol(node.value))
+            value = definitions[node.value]
+            if isinstance(value, DeferredDefinition):
+                materialized = deferred(value.node, bindings)
+                if isinstance(materialized, sp.Expr) and materialized.is_number is True:
+                    validate_assumptions(state.assumptions.subs(sp.Symbol(node.value), materialized))
+                return materialized
+            if isinstance(value, DeferredFunction):
+                raise MathechanError("La función diferida requiere argumentos entre corchetes.")
+            if isinstance(value, StoredDefinition):
+                return _stored_value(value, {sp.Symbol(name): item for name, item in bindings.items()}, restrictions, state)
+            if isinstance(value, UserFunction):
+                raise MathechanError("La función definida requiere argumentos entre corchetes.")
+            return value
+        return {"Pi": sp.pi, "E": sp.E, "Infinity": sp.oo, "True": sp.true,
+                "False": sp.false, "Reals": sp.S.Reals, "Complexes": sp.S.Complexes,
+                "Integers": sp.S.Integers}.get(node.value, sp.Symbol(node.value))
     if node.kind == "list":
         if len(node.children) > 64:
             raise MathechanError("Una lista admite hasta 64 elementos en este lenguaje experimental.")
@@ -186,6 +236,9 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
             raise MathechanError("Los operadores requieren expresiones escalares.")
         if node.value == "==":
             return sp.Eq(left, right, evaluate=False)
+        if node.value in ("!=", "<", "<=", ">", ">="):
+            constructor = {"!=": sp.Ne, "<": sp.Lt, "<=": sp.Le, ">": sp.Gt, ">=": sp.Ge}[node.value]
+            return constructor(left, right)
         if node.value == "+":
             return left + right
         if node.value == "-":
@@ -203,8 +256,48 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
             require_nonzero(left, restrictions)
         return left ** right
     if node.kind == "call":
+        if node.value == "If":
+            if len(node.children) != 3:
+                raise MathechanError("Use If[condición,verdadero,falso].")
+            condition = sp.simplify(read(node.children[0]))
+            if condition is sp.true:
+                return read(node.children[1])
+            if condition is sp.false:
+                return read(node.children[2])
+            from sympy.logic.boolalg import Boolean
+            if not isinstance(condition, Boolean):
+                raise MathechanError("If requiere una condición lógica.")
+            state.mark_status("unresolved")
+            state.warnings.append("If conserva sus ramas sin evaluar porque la condición no se pudo decidir.")
+            return HeldExpression.from_node(node)
+        if node.value in ASSUMPTION_CALLS or (node.value == "Simplify" and len(node.children) == 2):
+            return assumption_call(node, build, restrictions, state, bindings, functions, definitions)
+        if node.value in SEMANTIC_CALLS:
+            return semantic_call(node, build, restrictions, state, bindings, functions, definitions)
         if node.value in SCIENTIFIC_CALLS:
             return scientific_call(node, build, restrictions, state, bindings, functions, definitions)
+        if isinstance(definitions.get(node.value), DeferredFunction):
+            function = definitions[node.value]
+            if len(node.children) != len(function.parameters):
+                raise MathechanError("La función diferida recibió un número incorrecto de argumentos.")
+            arguments = [read(child) for child in node.children]
+            for pattern, argument in zip(function.patterns or ("ScalarPattern",) * len(arguments), arguments):
+                matches = (isinstance(argument, sp.Expr) and argument.is_commutative is True
+                           and (pattern == "ScalarPattern" or
+                                pattern == "IntegerPattern" and argument.is_integer is True or
+                                pattern == "RealPattern" and argument.is_real is True))
+                if not matches:
+                    raise MathechanError("Un argumento no cumple el patrón declarado de la función.")
+            scope = {**bindings, **dict(zip(function.parameters, arguments))}
+            return deferred(function.node, scope)
+        if isinstance(definitions.get(node.value), UserFunction):
+            function = definitions[node.value]
+            if len(node.children) != len(function.parameters):
+                raise MathechanError("La función definida recibió un número incorrecto de argumentos.")
+            arguments = [read(child) for child in node.children]
+            if any(not isinstance(value, sp.Expr) for value in arguments):
+                raise MathechanError("Los argumentos de una función definida deben ser escalares.")
+            return _stored_value(function.body, dict(zip(function.parameters, arguments)), restrictions, state)
         if node.value in functions:
             if len(node.children) != 1:
                 raise MathechanError("La función dependiente de DSolve requiere un argumento.")
@@ -219,7 +312,10 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
         argument = read(node.children[0])
         if not isinstance(argument, sp.Expr):
             raise MathechanError("La función requiere un argumento escalar.")
-        return FUNCTIONS[node.value](argument)
+        if node.value in ("Log", "Sqrt"):
+            track_function_domain(node.value, argument, restrictions, state)
+        argument = refine_expression(argument, getattr(state, "assumptions", sp.true))
+        return refine_expression(FUNCTIONS[node.value](argument), getattr(state, "assumptions", sp.true))
     raise MathechanError("Construcción no admitida por el evaluador.")
 
 
@@ -243,6 +339,12 @@ def plot(node, source=None, state=None, definitions=None):
         raise MathechanError("Plot requiere una sola variable libre y un símbolo como variable.")
     if any(item.free_symbols - {variable} for item in restrictions):
         raise MathechanError("Plot no puede comprobar condiciones con variables adicionales.")
+    parameters = {}
+    for name, stored in definitions.items():
+        value = stored.value if isinstance(stored, StoredDefinition) else stored
+        if name != str(variable) and isinstance(value, sp.Expr) and value.is_number is True:
+            parameters[sp.Symbol(name)] = value
+    requirements = [item.subs(parameters, simultaneous=True) for item in state.requirements]
     if any(bound.is_real is not True or bound.is_finite is not True for bound in (lower, upper)):
         raise MathechanError("Los extremos deben ser reales finitos.")
     low, high = float(lower), float(upper)
@@ -261,6 +363,12 @@ def plot(node, source=None, state=None, definitions=None):
         diagnostic = restrictions_at(restrictions, variable, domain_sample, coordinate)
         if diagnostic:
             raise MathechanError(f"{diagnostic} cerca de {x:g}.")
+        for requirement in requirements:
+            checked = sp.simplify(requirement.subs(variable, domain_sample))
+            if checked is not sp.true:
+                raise MathechanError(
+                    f"Plot no puede verificar una hipótesis o condición original cerca de {x:g}."
+                )
         value = constant_value if constant_value is not None else expression.subs(variable, sample)
         if not isinstance(value, (sp.Float, sp.Rational)):
             value = value.evalf()
@@ -313,14 +421,22 @@ def reusable_input(expression):
         return None
 
 
-def _evaluate_node(node, source, definitions=None):
+def _evaluate_node(node, source, definitions=None, assumptions=None, capture=None):
     """Return structured output and its immutable value without reparsing display text."""
     try:
         state = EvaluationState()
+        state.assumptions = validate_assumptions(sp.true if assumptions is None else assumptions)
+        if state.assumptions is not sp.true:
+            state.conditions.append(sp.sstr(state.assumptions))
+            state.requirements.append(state.assumptions)
+            state.mark_status("conditional")
         if node.kind == "call" and node.value == "Plot":
             return plot(node, source.strip(), state, definitions), None
         restrictions = []
         expression = build(node, restrictions, state, definitions=definitions)
+        expression = refine_expression(expression, state.assumptions)
+        if capture is not None:
+            capture.update(restrictions=tuple(restrictions), requirements=tuple(state.requirements), warnings=tuple(state.warnings))
         if ((expression.has(sp.zoo, sp.nan) and not expression.has(sp.Piecewise))
                 or (isinstance(expression, sp.Expr) and expression.is_finite is False)):
             raise MathechanError("El resultado no es finito o está indefinido.")
@@ -331,12 +447,22 @@ def _evaluate_node(node, source, definitions=None):
         if restrictions:
             warnings.append("La entrada del resultado no conserva por sí sola las condiciones originales; consérvelas por separado.")
         exact = not expression.has(sp.Float)
-        kind = "solutions" if node.kind == "call" and node.value in ("Solve", "DSolve") else "expression"
+        kind = "solutions" if node.kind == "call" and node.value in ("Solve", "NSolve", "DSolve") else "expression"
         if isinstance(expression, sp.Equality) and kind == "expression":
             kind = "equation"
         elif isinstance(expression, sp.Tuple):
             kind = "list"
+        elif isinstance(expression, sp.ImmutableMatrix):
+            kind = "matrix"
+        elif isinstance(expression, HeldExpression):
+            kind = "held"
+        elif isinstance(expression, sp.core.relational.Relational) and kind == "expression":
+            kind = "inequality"
+        elif expression in (sp.true, sp.false) or isinstance(expression, (sp.logic.boolalg.BooleanFunction, sp.Contains)):
+            kind = "logical"
         text = expression_input(expression) if kind in ("equation", "list") else None
+        if node.kind == "call" and node.value == "Display":
+            text = state.details["presentation"]["text"]
         result = EvaluationResult(kind, text or sp.sstr(expression), latex=sp.latex(expression),
                                 input=candidate, conditions=tuple(dict.fromkeys(condition_text(restrictions) + tuple(state.conditions))),
                                 warnings=tuple(dict.fromkeys(warnings)),

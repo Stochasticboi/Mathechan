@@ -182,15 +182,15 @@ def solve_equations(equations, variables, domain="Complexes"):
         if expression.is_polynomial(variable) and expression != 0:
             leading = sp.Poly(expression, variable).LC()
             if leading.free_symbols and leading.is_zero is None:
-                return _conditional_system(residuals, variables, domain, method)
+                from .symbolic_systems import solve_parameter_branches
+                return solve_parameter_branches(expression, variable, domain)
         result = sp.solveset(expression, variable, domain=domain)
     else:
         try:
             matrix, vector = sp.linear_eq_to_matrix(residuals, variables)
-        except NonlinearError as error:
-            raise NotImplementedError(
-                "Los sistemas de Solve admiten por ahora ecuaciones lineales."
-            ) from error
+        except NonlinearError:
+            from .symbolic_systems import solve_polynomial_system
+            return solve_polynomial_system(equations, variables, domain)
         if matrix.free_symbols and not (
             matrix.rows == matrix.cols and matrix.det().is_zero is False
         ):
