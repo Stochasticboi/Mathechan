@@ -22,6 +22,7 @@ SCIENTIFIC_CALLS = frozenset(
         "Substitute",
         "Sum",
         "Integrate",
+        "Limit",
         "Solve",
         "NSolve",
         "DSolve",
@@ -55,6 +56,8 @@ class EvaluationState:
             "unverified": 3,
             "unresolved": 4,
             "no_solution": 5,
+            "divergent": 6,
+            "no_limit": 7,
         }
         if priority.get(status, 0) > priority.get(self.status, 0):
             self.status = status
@@ -318,6 +321,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name == "Limit":
+        from .limit_language import evaluate_limit
+        return evaluate_limit(node, build, restrictions, state, bindings, functions, definitions)
     if name == "FullSimplify":
         from .assumptions import combine_assumptions
         from .simplification import full_simplify_expression

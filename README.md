@@ -23,6 +23,12 @@ exponen análisis acotados con sus condiciones y límites. Consulte el
 Estas funciones están incluidas en la [versión preliminar 0.2.0-dev0](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
 Las descargas anteriores conservan su alcance original.
 
+## Desarrollo posterior
+
+El código en desarrollo **0.2.0.dev1** incorpora `Limit` bilateral y lateral.
+Este incremento no está en el descargable 0.2.0-dev0. Véase el
+[lenguaje](docs/es/lenguaje.md).
+
 ## Consola experimental
 
 La versión publicada funciona **por consola** y utiliza un parser restringido
