@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mathechan"
-version = "0.2.0.dev0"
+version = "0.2.0.dev1"
 description = "Experimental symbolic computation and plotting for theoretical physics"
 readme = "README.md"
 authors = [{name = "Edward Larroza H."}]

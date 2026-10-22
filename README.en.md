@@ -23,6 +23,12 @@ See the [language reference](docs/en/language.md) for syntax and verified scope.
 These functions are included in the [0.2.0-dev0 preview release](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
 Earlier downloads retain their original scope.
 
+## Further development
+
+Development source **0.2.0.dev1** adds bilateral and one-sided `Limit`.
+This increment is not in the 0.2.0-dev0 download. See the
+[language reference](docs/en/language.md).
+
 ## Experimental console
 
 The published version runs **from the command line**, using a restricted parser

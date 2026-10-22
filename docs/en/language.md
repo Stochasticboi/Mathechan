@@ -360,6 +360,65 @@ the bound variable are recorded in `details.integrand_conditions`, rather than
 as restrictions on a free variable of the result. This does not replace general
 convergence, branch, or domain analysis.
 
+### Limits: development 0.2.0.dev1
+
+This increment is in the development source; it is not included in the published
+0.2.0-dev0 ZIP.
+
+```wolfram
+Limit[Sin[x]/x,x,0]
+Limit[Sqrt[x^2]/x,x,0,Left]
+Limit[Sqrt[x^2]/x,x,0,Right]
+Limit[1/x,x,Infinity]
+```
+
+These examples yield `1`, `-1`, `1`, and `0`. `Limit[expression,variable,point]`
+is **bilateral**, as is an explicit fourth argument `Both`. `Left` and `Right`
+select approach through smaller or larger real values, not complex-plane
+paths. They are literal options unaffected by same-named session variables.
+For `Infinity` and `-Infinity`, the point determines the direction; omit the
+fourth argument. Multivariate limits and complex approach points are unsupported.
+
+Expressions may take principal-branch complex values. The approach point need
+not belong to the expression domain: `Limit[(x^2-1)/(x-1),x,1]` yields `2`.
+Bound-variable exclusions appear in `details.limit_expression_exclusions`;
+independent exclusions remain in `conditions`. Cancelling `a*x/(a*x)`, for
+example, retains `a != 0`.
+
+Statuses distinguish `evaluated` (computed finite exact value), `unverified`
+(approximate data or result without error certification), `conditional`
+(hypotheses or parameter exclusions), `divergent` (infinite limit), `no_limit`
+(distinct sides or oscillation), and `unresolved` (undetermined computation or
+parameter branches). `Limit[1/x^2,x,0]` diverges; `Limit[1/x,x,0]` and
+`Limit[Sin[1/x],x,0]` have no unique bilateral limit.
+
+Divergent, nonexistent and unresolved limits retain an inert `Limit` with
+`input=null`. They do not return scalar infinities or treat an oscillation
+interval as a limit value. Inspect `details.sides`, `details.extended_value`
+when present, and warnings. `exact=true` describes a representation without
+Float; it does not prove existence or certify the limit. `verification` stays
+`not_checked`: no independent epsilon-delta proof is provided.
+
+The variable is local even when assigned in the session. Hypotheses involving
+it must hold throughout a full one-sided neighbourhood, apart from the point.
+`Assuming[x>0,Limit[Sqrt[x^2]/x,x,0,Right]]` is accepted; requesting a bilateral
+limit with that hypothesis is rejected. Discrete, mixed or unverifiable
+contexts are conservatively rejected. Assigned parameter values are accepted;
+branches of symbols without proven finiteness remain unresolved, even when the
+backend might suggest a generic answer.
+
+Expressions are bounded to 256 operations and eight symbols. These are
+structural budgets, not effective time or memory limits. Parameter-dependent
+denominator degeneracy checks are limited to rational polynomials of total
+degree at most 32 and estimated expansion of at most 4096 terms; other cases
+are conservatively rejected. Current JSON session
+persistence cannot store inert `Limit` results; finite values within supported
+types remain storable. `Series`, `Product` and other calculus extensions are
+outside this increment.
+
+The backend uses [SymPy 1.14 limits](https://docs.sympy.org/latest/modules/series/series.html#limits)
+and explicitly compares both sides for `Both`.
+
 ### Equations and differential equations
 
 `Solve[x^2==2,x]` uses `Complexes` by default;

@@ -1,5 +1,27 @@
 # Versiones / Releases
 
+## 0.2.0.dev1 — Sin publicar / Unreleased
+
+### Español
+
+- `Limit[expr,x,punto]` calcula un límite bilateral sobre el eje real; `Left`
+  y `Right` seleccionan un lateral. Admite puntos reales exactos e infinitos reales.
+- Distingue valor finito, divergencia, ausencia de límite y cálculo pendiente.
+  Los tres últimos conservan `Limit` sin evaluar, con diagnósticos de los laterales.
+- Respeta la variable ligada, conserva exclusiones de parámetros y verifica
+  que las hipótesis cubran el entorno lateral. Los casos paramétricos no
+  determinados permanecen pendientes. No cambia el descargable 0.2.0-dev0.
+
+### English
+
+- `Limit[expr,x,point]` computes a bilateral real-axis limit; `Left` and `Right`
+  select one side. Exact real points and real infinities are supported.
+- Distinguishes finite values, divergence, absence of a limit, and unresolved
+  requests. The latter three retain an unevaluated `Limit` with side diagnostics.
+- Respects bound-variable scope, retains parameter exclusions, and checks that
+  hypotheses cover the approach neighbourhood. Undetermined parameter cases
+  remain unresolved. The published 0.2.0-dev0 download is unchanged.
+
 ## 0.2.0.dev0 — 2026-10-22 (preliminar / preview)
 
 ### Español

@@ -366,6 +366,70 @@ en su variable ligada se registran como `details.integrand_conditions`, no como
 restricciones de una variable libre del resultado. Esto no sustituye un análisis
 general de convergencia, ramas o dominio.
 
+### Límites: desarrollo 0.2.0.dev1
+
+Este incremento está en el código en desarrollo; no está incluido en el ZIP
+publicado 0.2.0-dev0.
+
+```wolfram
+Limit[Sin[x]/x,x,0]
+Limit[Sqrt[x^2]/x,x,0,Left]
+Limit[Sqrt[x^2]/x,x,0,Right]
+Limit[1/x,x,Infinity]
+```
+
+Los valores de estos ejemplos son `1`, `-1`, `1` y `0`. La forma
+`Limit[expresión,variable,punto]` es **bilateral**, igual que la opción explícita
+`Both`. El cuarto argumento `Left` o `Right` selecciona el acercamiento por
+valores reales menores o mayores que el punto; no es una dirección en el plano
+complejo. Son opciones literales, independientes de variables del mismo nombre.
+En `Infinity` y `-Infinity` la dirección la determina el punto y se omite esa
+opción. No se admiten límites multivariables ni puntos complejos.
+
+La expresión puede tomar valores complejos en la rama principal. El punto
+límite no necesita pertenecer a su dominio: `Limit[(x^2-1)/(x-1),x,1]` devuelve
+`2`. Las exclusiones de la variable ligada quedan en
+`details.limit_expression_exclusions`; las exclusiones independientes siguen en
+`conditions`. Por ejemplo, cancelar `a*x/(a*x)` conserva la exigencia `a != 0`.
+
+`status` distingue:
+
+- `evaluated`: valor finito exacto calculado por el backend.
+- `unverified`: datos o resultados aproximados; sin certificación de error.
+- `conditional`: resultado sujeto a hipótesis o exclusiones de parámetros.
+- `divergent`: límite infinito, como `Limit[1/x^2,x,0]`.
+- `no_limit`: laterales distintos u oscilación sin valor único, como
+  `Limit[1/x,x,0]` o `Limit[Sin[1/x],x,0]`.
+- `unresolved`: el método no determina el resultado o sus ramas paramétricas.
+
+Divergencia, ausencia de límite y cálculos pendientes conservan un objeto
+`Limit` inerte, con `input=null`; no producen un escalar infinito ni presentan
+un intervalo de oscilación como valor límite. Consulte `details.sides`,
+`details.extended_value` cuando esté presente, y las advertencias. `exact=true`
+describe la representación sin Float, no demuestra existencia ni certificación.
+`verification` permanece `not_checked`: no se aporta una prueba independiente
+por definición epsilon-delta.
+
+La variable es local aunque tenga una asignación en la sesión. Las hipótesis
+sobre ella deben valer en un entorno lateral completo, salvo el propio punto.
+`Assuming[x>0,Limit[Sqrt[x^2]/x,x,0,Right]]` es válido; pedir el bilateral con
+esa hipótesis se rechaza. Contextos discretos, mixtos o no verificables se
+rechazan conservadoramente. Se aceptan valores de parámetros ya asignados;
+las ramas de símbolos sin finitud demostrada permanecen pendientes, incluso
+si el backend podría proponer un resultado genérico.
+
+Se limita la expresión a 256 operaciones y ocho símbolos. Son presupuestos
+estructurales, no límites efectivos de tiempo o memoria. La comprobación de
+degeneraciones de denominadores paramétricos se limita a polinomios racionales
+de grado total hasta 32 y expansión estimada de hasta 4096 términos; otros
+casos se rechazan conservadoramente. La persistencia JSON
+actual no admite guardar resultados `Limit` inertes; sí valores finitos dentro
+de los tipos ya admitidos. `Series`, `Product` y las demás ampliaciones de la
+etapa de cálculo no forman parte de este incremento.
+
+El backend utiliza [los límites de SymPy 1.14](https://docs.sympy.org/latest/modules/series/series.html#limits),
+comparando explícitamente ambos laterales cuando se pide `Both`.
+
 ### Ecuaciones y ecuaciones diferenciales
 
 `Solve[x^2==2,x]` trabaja sobre `Complexes` por defecto;
