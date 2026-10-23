@@ -86,6 +86,9 @@ class Codec:
             _name(value, internal=True)
             if children:
                 raise ValueError("Un nombre no admite hijos.")
+        elif kind == "string":
+            if value not in ("Cartesian", "Cylindrical", "Spherical", "Components", "Orthonormal") or children:
+                raise ValueError("El texto no es una opción de coordenadas admitida.")
         elif kind == "number":
             if len(value) > 100 or not re.fullmatch(r"\d+(?:\.\d+)?", value) or children:
                 raise ValueError("Número de AST inválido.")

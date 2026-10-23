@@ -25,9 +25,11 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev2** adds limits, series, products, mixed
-derivatives, Cartesian vector calculus and iterated integrals.
+Development source **0.2.0.dev3** adds limits, series, products, mixed
+derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
 Replacement supports `expr /. x -> value`, rule lists and delayed rules.
+Curvilinear operators use orthonormal components and retain chart conditions;
+the Jacobian distinguishes component derivatives from the geometric vector gradient.
 These increments are not in the 0.2.0-dev0 download. See the
 [language reference](docs/en/language.md) for scope and restrictions.
 

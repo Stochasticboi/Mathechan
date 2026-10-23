@@ -25,9 +25,12 @@ Las descargas anteriores conservan su alcance original.
 
 ## Desarrollo posterior
 
-El código en desarrollo **0.2.0.dev2** incorpora límites, series, productos,
-derivadas mixtas, cálculo vectorial cartesiano e integrales iteradas.
+El código en desarrollo **0.2.0.dev3** incorpora límites, series, productos,
+derivadas mixtas, cálculo vectorial cartesiano, cilíndrico y esférico e integrales iteradas.
 La sustitución admite `expr /. x -> valor`, listas de reglas y reglas diferidas.
+Los operadores curvilíneos usan componentes ortonormales y conservan las
+condiciones de la carta; el jacobiano distingue derivadas de componentes y
+gradiente vectorial geométrico.
 Estos incrementos no están en el descargable 0.2.0-dev0. Véase el
 [lenguaje](docs/es/lenguaje.md) para el alcance y sus restricciones.
 

@@ -2,9 +2,10 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev2**. La descarga publicada
+Este documento describe el código **0.2.0.dev3**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
-de dev1 ni las ampliaciones de cálculo y reglas de dev2. Las subsecciones
+de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
+de dev3. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -55,7 +56,7 @@ reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
 
-## Cálculo y reglas: desarrollo 0.2.0.dev2
+## Cálculo y reglas: desarrollo 0.2.0.dev3
 
 Esta sección corresponde al código actual, posterior al ZIP 0.2.0-dev0.
 La sintaxis se aproxima a Wolfram en los casos descritos; no se declara
@@ -124,12 +125,48 @@ parámetros simbólicos y las funciones expuestas por Mathechan. No se presupone
 que un símbolo sea real; por ejemplo, algunas derivadas de `Abs` quedan formales.
 Las condiciones originales se conservan. No se certifica diferenciabilidad global.
 
-Los operadores vectoriales usan coordenadas cartesianas, de una a ocho variables;
-`Curl` requiere tres componentes y variables. `Grad`, `Curl`, `Jacobian` y
-`Hessian` devuelven matrices inmutables; `Div` devuelve un escalar.
-Se comprueban dimensiones y se limita la salida a 64 elementos/4096 operaciones,
-con entrada de hasta 256 operaciones/ocho símbolos. No añade álgebra matricial
-general ni coordenadas curvilíneas.
+Sin tercer argumento se usa `Cartesian`, de una a ocho variables. `Curl`
+requiere tres componentes y variables. `Grad`, `Curl`, `Jacobian` y `Hessian`
+devuelven matrices inmutables; `Div` devuelve un escalar. Se comprueban dimensiones
+y se limita la salida a 64 elementos/4096 operaciones, con entrada de hasta
+256 operaciones/ocho símbolos. No añade álgebra matricial general.
+
+El tercer argumento selecciona `Cartesian`, `Cylindrical` o `Spherical`,
+como nombre o cadena (`Spherical` y `"Spherical"` son equivalentes).
+Las cartas curvilíneas son tridimensionales:
+
+| Carta | Variables, en orden | Dominio regular |
+|---|---|---|
+| `Cylindrical` | `{rho,phi,z}`: radio, azimut, altura | Coordenadas reales, `rho>0`. |
+| `Spherical` | `{r,theta,phi}`: radio, ángulo polar desde +z, azimut | Coordenadas reales, `r>0`, `0<theta<Pi`. |
+
+El azimut se trata como coordenada real local, sin imponer un corte periódico.
+Los vectores de entrada y salida tienen componentes en la **base ortonormal
+local**, no en la base coordenada. `Grad` de un vector devuelve la matriz del
+gradiente covariante: fila i = componente y columna j = dirección de derivación
+ortonormal. `Hessian` devuelve el Hessiano geométrico en esa misma base;
+incluye la variación de la base y no es la tabla de segundas parciales crudas.
+
+```wolfram
+Grad[r^2,{r,theta,phi},"Spherical"]             (* {2*r,0,0} *)
+Div[{rho,0,z},{rho,phi,z},Cylindrical]          (* 3 *)
+Curl[{0,rho,0},{rho,phi,z},"Cylindrical"]      (* {0,0,2} *)
+Hessian[r^2/2,{r,theta,phi},Spherical]          (* identidad 3x3 *)
+Jacobian[{r,0,0},{r,theta,phi},Spherical]      (* diagonal {1,0,0} *)
+Jacobian[{r,0,0},{r,theta,phi},Spherical,"Orthonormal"]
+(* identidad 3x3, igual a Grad del mismo campo *)
+```
+
+`Jacobian` usa por defecto `Components`: derivadas parciales ordinarias de
+las funciones componentes respecto de las variables, también con salida
+rectangular. `Orthonormal`, como cuarto argumento, requiere un campo de tres
+componentes y devuelve el gradiente vectorial geométrico 3x3. No convierte un
+mapa de coordenadas automáticamente en un campo físico.
+
+Los requisitos de la carta acompañan al resultado aunque se simplifique a una
+constante y se comprueban tras sustituciones. Los ejes y el origen quedan fuera
+del dominio regular; una expresión simplificada finita no certifica su extensión
+a esos puntos. No se admiten cartas arbitrarias ni tensores de rango superior.
 
 ### Series y aproximaciones locales
 

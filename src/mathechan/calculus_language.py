@@ -1,5 +1,7 @@
 """Scoped language bindings for differential calculus, series and aggregates."""
 
+from dataclasses import replace
+
 import sympy as sp
 
 from .domains import condition_text, require_nonzero, parameter_domain_conditions
@@ -78,17 +80,57 @@ def calculus_call(node, build, restrictions, state, bindings, functions, definit
         return outcome.value.subs(mapping, simultaneous=True)
 
     if name in ("Grad", "Div", "Curl", "Jacobian", "Hessian"):
-        arity(node, 2)
+        arity(node, 2, 3, 4) if name == "Jacobian" else arity(node, 2, 3)
         spec = node.children[1]
         if spec.kind != "list":
             raise ValueError("El cálculo vectorial requiere una lista de variables.")
         symbols = tuple(variable(item) for item in spec.children)
+        chart, mode = "Cartesian", "Components"
+        if len(node.children) >= 3:
+            option = node.children[2]
+            if option.kind not in ("name", "string") or option.value not in ("Cartesian", "Cylindrical", "Spherical"):
+                raise ValueError("El sistema debe ser Cartesian, Cylindrical o Spherical.")
+            chart = option.value
+        if len(node.children) == 4:
+            option = node.children[3]
+            if option.kind not in ("name", "string") or option.value not in ("Components", "Orthonormal"):
+                raise ValueError("Jacobian admite Components u Orthonormal como modo.")
+            mode = option.value
         scope, defs, child = context(symbols)
+        chart_requirements = ()
+        if chart != "Cartesian":
+            from .coordinate_calculus import chart_conditions
+            from .assumptions import combine_assumptions
+            chart_requirements = chart_conditions(symbols, chart)
+            child.assumptions = combine_assumptions(child.assumptions, sp.And(*chart_requirements))
         local = []
         expression = read(node.children[0], local, child, scope, defs)
-        outcome = vector_expression(name, expression, symbols)
+        outcome = vector_expression(name, expression, symbols, chart, mode)
+        mapping = {sp.Symbol(key): value for key, value in bindings.items()}
+        requirements = []
+        for condition in (*sp.And.make_args(child.assumptions), *child.requirements, *chart_requirements):
+            condition = sp.simplify(condition.subs(mapping, simultaneous=True))
+            if condition is sp.false:
+                raise ValueError("El punto de evaluación viola las condiciones de la carta o del campo.")
+            if condition is not sp.true and condition not in requirements:
+                requirements.append(condition)
+        child.requirements = requirements
+        child.conditions = [sp.sstr(condition) for condition in requirements]
+        local = checked_restrictions([item.subs(mapping, simultaneous=True) for item in local])
+        details = dict(outcome.details)
+        if chart_requirements:
+            details["chart_requirements"] = [sp.sstr(condition) for condition in
+                (sp.simplify(item.subs(mapping, simultaneous=True)) for item in chart_requirements)
+                if condition is not sp.true]
+        if any(symbol in mapping and mapping[symbol] != symbol for symbol in symbols):
+            details["coordinate_values"] = [sp.sstr(symbol.subs(mapping, simultaneous=True)) for symbol in symbols]
+        outcome = replace(outcome, value=outcome.value.subs(mapping, simultaneous=True), details=details,
+                          conditions=tuple(map(sp.sstr, requirements)),
+                          status="evaluated" if outcome.status == "conditional" and not requirements else outcome.status)
         absorb_child(child)
         state.absorb(outcome)
+        if requirements:
+            state.mark_status("conditional")
         restrictions.extend(local)
         return outcome.value
 

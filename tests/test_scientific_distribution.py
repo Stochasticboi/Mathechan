@@ -80,6 +80,19 @@ def references():
             },
         },
     }
+    spherical = ["Contains(r, Reals)", "Contains(theta, Reals)", "Contains(phi, Reals)",
+                 "r > 0", "theta > 0", "theta < pi"]
+    cylindrical = ["Contains(rho, Reals)", "Contains(phi, Reals)", "Contains(z, Reals)", "rho > 0"]
+    for source, kind, text, chart, basis, conditions in (
+        ('Grad[r^2,{r,theta,phi},"Spherical"]', "matrix", "Matrix([\n[2*r],\n[  0],\n[  0]])", "Spherical", "orthonormal", spherical),
+        ('Div[{r,0,0},{r,theta,phi},"Spherical"]', "expression", "3", "Spherical", "orthonormal", spherical),
+        ('Curl[{0,rho,0},{rho,phi,z},"Cylindrical"]', "matrix", "Matrix([\n[0],\n[0],\n[2]])", "Cylindrical", "orthonormal", cylindrical),
+        ('Hessian[r^2/2,{r,theta,phi},"Spherical"]', "matrix", "Matrix([\n[1, 0, 0],\n[0, 1, 0],\n[0, 0, 1]])", "Spherical", "orthonormal", spherical),
+        ('Jacobian[{r,0,0},{r,theta,phi},"Spherical"]', "matrix", "Matrix([\n[1, 0, 0],\n[0, 0, 0],\n[0, 0, 0]])", "Spherical", "component_functions_by_coordinate", spherical),
+        ('Jacobian[{r,0,0},{r,theta,phi},"Spherical","Orthonormal"]', "matrix", "Matrix([\n[1, 0, 0],\n[0, 1, 0],\n[0, 0, 1]])", "Spherical", "orthonormal", spherical),
+    ):
+        results[source] = {"kind": kind, "text": text, "status": "conditional",
+                           "conditions": list(conditions), "details": {"coordinates": chart, "basis": basis}}
     for payload in results.values():
         payload.setdefault("exact", True)
         payload.setdefault("status", "evaluated")
@@ -107,7 +120,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 18)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 24)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -139,6 +152,14 @@ class ScientificPayloadTests(unittest.TestCase):
         for payload in mutations:
             with self.subTest(payload=payload), self.assertRaises(smoke.SmokeTestError):
                 smoke.check_scientific_payload("N[Pi,30]", payload)
+
+    def test_curvilinear_exact_values_require_domain_and_basis(self):
+        for source in smoke.CURVILINEAR_REFERENCES:
+            for field, bad in (("conditions", []), ("status", "evaluated"), ("details", {})):
+                payload = deepcopy(references()[source])
+                payload[field] = bad
+                with self.subTest(source=source, field=field), self.assertRaises(smoke.SmokeTestError):
+                    smoke.check_scientific_payload(source, payload)
 
     def test_exact_operations_reject_wrong_result_status_and_missing_fields(self):
         for field, bad in (
@@ -177,7 +198,7 @@ class ScientificPayloadTests(unittest.TestCase):
 
 
 class ScientificSmokeTests(unittest.TestCase):
-    def test_scientific_mode_executes_eighteen_additional_json_checks(self):
+    def test_scientific_mode_executes_twenty_four_additional_json_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "application.exe"
             executable.write_bytes(b"fixture")
@@ -213,8 +234,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 22)
-            self.assertEqual(runner.call_count, 22)
+            self.assertEqual(len(checks), 28)
+            self.assertEqual(runner.call_count, 28)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

@@ -2,9 +2,9 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev2 source**. The published **0.2.0-dev0**
-download includes sessions and extended algebra, but not dev1 limits or dev2
-calculus and replacement extensions. Historical 0.1.1 sections record the scope
+This document describes **0.2.0.dev3 source**. The published **0.2.0-dev0**
+download includes sessions and extended algebra, but not dev1 limits, dev2
+calculus and replacement extensions, or dev3 curvilinear charts. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -55,7 +55,7 @@ automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
 
-## Calculus and rules: development 0.2.0.dev2
+## Calculus and rules: development 0.2.0.dev3
 
 This section describes current source after the 0.2.0-dev0 ZIP. Similar syntax
 does not imply full Wolfram language or evaluation compatibility.
@@ -102,7 +102,7 @@ Original exclusions and assumptions are transformed as well. `x/x/.x->0` and
 substitute parameters before computation, use `Substitute` where applicable,
 or explicitly extract `Normal`.
 
-### Derivatives and Cartesian vector calculus
+### Derivatives and vector calculus
 
 ```wolfram
 D[Sin[x],{x,3}]
@@ -119,11 +119,48 @@ symbolic parameters and currently exposed functions. Symbols are not assumed
 real; some `Abs` derivatives remain formal. Domain restrictions survive;
 global differentiability is not certified.
 
-Vector operators use Cartesian coordinates with one to eight variables;
+Without a third argument, operators use `Cartesian` with one to eight variables.
 `Curl` requires three components and variables. `Grad`, `Curl`, `Jacobian` and
 `Hessian` return immutable matrices; `Div` returns a scalar. Dimensions are
 checked: at most 64 output elements/4096 operations and 256 input operations/
-eight symbols. General matrix algebra and curvilinear coordinates are not added.
+eight symbols. General matrix algebra is not added.
+
+The third argument selects `Cartesian`, `Cylindrical` or `Spherical`, as a name
+or string (`Spherical` and `"Spherical"` are equivalent). Curvilinear charts
+are three-dimensional:
+
+| Chart | Variables, in order | Regular domain |
+|---|---|---|
+| `Cylindrical` | `{rho,phi,z}`: radius, azimuth, height | Real coordinates, `rho>0`. |
+| `Spherical` | `{r,theta,phi}`: radius, polar angle from +z, azimuth | Real coordinates, `r>0`, `0<theta<Pi`. |
+
+Azimuth is a local real coordinate without an imposed periodic cut. Input and
+output vectors use the **local orthonormal basis**, rather than the coordinate
+basis. Vector `Grad` returns the covariant gradient matrix: row i is the
+component and column j the orthonormal derivative direction. `Hessian` returns
+the geometric Hessian in that basis, including basis variation; it is not the
+array of raw second partial derivatives.
+
+```wolfram
+Grad[r^2,{r,theta,phi},"Spherical"]             (* {2*r,0,0} *)
+Div[{rho,0,z},{rho,phi,z},Cylindrical]          (* 3 *)
+Curl[{0,rho,0},{rho,phi,z},"Cylindrical"]      (* {0,0,2} *)
+Hessian[r^2/2,{r,theta,phi},Spherical]          (* 3x3 identity *)
+Jacobian[{r,0,0},{r,theta,phi},Spherical]      (* diagonal {1,0,0} *)
+Jacobian[{r,0,0},{r,theta,phi},Spherical,"Orthonormal"]
+(* 3x3 identity, equal to Grad of the same field *)
+```
+
+`Jacobian` defaults to `Components`: ordinary partial derivatives of component
+functions with respect to the variables, including rectangular output.
+The fourth argument `Orthonormal` requires three field components and returns
+the geometric 3x3 vector gradient. It does not automatically reinterpret a
+coordinate map as a physical field.
+
+Chart requirements stay attached even when the result simplifies to a constant
+and are checked after replacement. Axes and the origin lie outside the regular
+domain; a finite simplified expression does not certify extension to those
+points. Arbitrary charts and higher-rank tensors are unsupported.
 
 ### Local series
 

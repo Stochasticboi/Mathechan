@@ -1,5 +1,30 @@
 # Versiones / Releases
 
+## 0.2.0.dev3 — Sin publicar / Unreleased
+
+### Español
+
+- `Grad`, `Div`, `Curl` y `Hessian` admiten cartas `Cylindrical` y `Spherical`,
+  además de `Cartesian` por defecto. Los vectores usan la base ortonormal local;
+  `Grad` de un vector y `Hessian` incluyen los términos geométricos de esa base.
+- `Jacobian` conserva por defecto las derivadas parciales de las componentes,
+  incluso para salidas rectangulares. El cuarto argumento `Orthonormal` calcula
+  el gradiente vectorial geométrico 3×3.
+- Las opciones admiten nombres o cadenas. Se conservan las condiciones reales
+  de la carta: radio positivo y, en esféricas, ángulo polar entre 0 y Pi.
+  El descargable 0.2.0-dev0 no cambia.
+
+### English
+
+- `Grad`, `Div`, `Curl`, and `Hessian` support `Cylindrical` and `Spherical`
+  charts alongside the default `Cartesian`. Vectors use the local orthonormal
+  basis; vector `Grad` and `Hessian` include its geometric connection terms.
+- `Jacobian` defaults to ordinary component derivatives, allowing rectangular
+  output. Its fourth argument `Orthonormal` returns the geometric 3×3 vector gradient.
+- Options accept names or strings. Real chart conditions remain attached:
+  positive radius and, in spherical coordinates, polar angle between 0 and Pi.
+  The published 0.2.0-dev0 download is unchanged.
+
 ## 0.2.0.dev2 — Sin publicar / Unreleased
 
 ### Español
