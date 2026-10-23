@@ -29,6 +29,7 @@ CONSTRUCTORS = {
     "Interval": sp.Interval, "Union": sp.Union, "Intersection": sp.Intersection,
     "Complement": sp.Complement, "FiniteSet": sp.FiniteSet,
     "ExprCondPair": ExprCondPair, "Piecewise": sp.Piecewise,
+    "Order": sp.Order,
 }
 CONSTANTS = {"Pi": sp.pi, "E": sp.E, "I": sp.I, "Infinity": sp.oo,
              "NegativeInfinity": -sp.oo, "True": sp.true, "False": sp.false,
@@ -90,6 +91,11 @@ class Codec:
                 raise ValueError("Número de AST inválido.")
         elif kind == "call":
             _name(value)
+        elif kind == "pattern":
+            _name(value)
+            if (len(children) != 1 or children[0].get("kind") != "name"
+                    or children[0].get("value") not in ("Scalar", "Integer", "Real")):
+                raise ValueError("Patrón de regla inválido.")
         elif kind == "list":
             if value != "" or len(children) > 64:
                 raise ValueError("Lista de AST inválida.")
@@ -105,6 +111,17 @@ class Codec:
 
     def encode(self, value, depth=0):
         self.tick(depth)
+        from .replacement import RuleValue
+        if isinstance(value, RuleValue):
+            left, right, patterns, excluded, required, delayed = value.args
+            return {"type": "rule", "left": self.encode(left, depth + 1),
+                    "right": self.encode(right, depth + 1),
+                    "patterns": [[str(name), str(kind)] for name, kind in patterns],
+                    "excluded": [self.encode(item, depth + 1) for item in excluded],
+                    "required": [self.encode(item, depth + 1) for item in required],
+                    "delayed": delayed is sp.true}
+        if isinstance(value, sp.Wild):
+            return {"type": "wild", "name": value.name}
         if isinstance(value, HeldExpression):
             return {"type": "held", "node": self.ast_encode(value.node, depth + 1)}
         for name, constant in CONSTANTS.items():
@@ -147,6 +164,41 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "wild":
+            _keys(data, ("type", "name"))
+            return sp.Wild(_name(data["name"]))
+        if kind == "rule":
+            from .replacement import RuleValue
+            from sympy.core.symbol import Str
+            _keys(data, ("type", "left", "right", "patterns", "excluded", "required", "delayed"))
+            raw = data["patterns"]
+            if not isinstance(raw, list) or len(raw) > 8 or type(data["delayed"]) is not bool:
+                raise ValueError("Regla serializada inválida.")
+            patterns = []
+            for pair in raw:
+                if (not isinstance(pair, list) or len(pair) != 2
+                        or pair[1] not in ("Integer", "Real", "Scalar")):
+                    raise ValueError("Tipo de patrón inválido.")
+                from .session import Session
+                Session._check_name(_name(pair[0]))
+                patterns.append(sp.Tuple(Str(_name(pair[0])), Str(pair[1])))
+            if len({str(pair[0]) for pair in patterns}) != len(patterns):
+                raise ValueError("Patrones duplicados.")
+            if any(not isinstance(data[key], list) or len(data[key]) > 64 for key in ("excluded", "required")):
+                raise ValueError("Condiciones de regla inválidas.")
+            left, right = (self.decode(data[key], depth + 1) for key in ("left", "right"))
+            excluded = sp.Tuple(*(self.decode(item, depth + 1) for item in data["excluded"]))
+            required = sp.Tuple(*(self.decode(item, depth + 1) for item in data["required"]))
+            if (not isinstance(left, sp.Basic) or isinstance(left, (RuleValue, HeldExpression))
+                    or data["delayed"] and not isinstance(right, HeldExpression)
+                    or not data["delayed"] and isinstance(right, (RuleValue, HeldExpression))
+                    or left.atoms(sp.Wild) != {sp.Wild(str(pair[0])) for pair in patterns}
+                    or any(not isinstance(item, sp.Expr) for item in excluded)
+                    or any(not (item in (sp.true, sp.false) or isinstance(item, (Relational, BooleanFunction, AppliedPredicate, sp.Contains)))
+                           for item in required)):
+                raise ValueError("Estructura de regla inválida.")
+            return RuleValue(left, right, sp.Tuple(*patterns), excluded, required,
+                             sp.true if data["delayed"] else sp.false)
         if kind == "constant":
             _keys(data, ("type", "name"))
             if data["name"] not in CONSTANTS:
@@ -211,6 +263,15 @@ class Codec:
                     isinstance(args[1], (Relational, BooleanFunction, AppliedPredicate, sp.Contains)))):
                 raise ValueError("Par expresión-condición inválido.")
             return ExprCondPair(*args)
+        if name == "Order":
+            if (not 2 <= len(args) <= 9 or not isinstance(args[0], sp.Expr)
+                    or args[0].has(sp.oo, -sp.oo, sp.zoo, sp.nan)
+                    or any(not isinstance(item, sp.Tuple) or len(item) != 2
+                           or not isinstance(item[0], sp.Symbol) or not isinstance(item[1], sp.Expr)
+                           or item[1].is_extended_real is not True
+                           or item[1].has(item[0]) for item in args[1:])):
+                raise ValueError("Orden de serie serializado inválido.")
+            return sp.Order(*args)
         if name == "Piecewise":
             if not 1 <= len(args) <= 64 or any(not isinstance(item, ExprCondPair) for item in args):
                 raise ValueError("Piecewise requiere entre 1 y 64 pares expresión-condición.")
@@ -224,6 +285,8 @@ class Codec:
                 raise ValueError("Intervalo serializado inválido.")
             return sp.Interval(*args)
         if name in ("Tuple", "Union", "Intersection", "Complement", "FiniteSet"):
+            return CONSTRUCTORS[name](*args)
+        if name in ("Add", "Mul") and any(item.has(sp.Order) for item in args):
             return CONSTRUCTORS[name](*args)
         return CONSTRUCTORS[name](*args, evaluate=False)
 

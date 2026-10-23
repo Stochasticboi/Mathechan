@@ -20,7 +20,7 @@ PROTECTED_NAMES = frozenset(FUNCTIONS) | SCIENTIFIC_CALLS | SESSION_COMMANDS | A
     "Pi", "E", "Infinity", "Plot", "Reals", "Complexes", "Integers", "True", "False",
     "If", "IntegerPattern", "RealPattern", "ScalarPattern",
 }
-ASSIGNABLE_STATUSES = frozenset({"evaluated", "approximate", "verified", "solved"})
+ASSIGNABLE_STATUSES = frozenset({"evaluated", "approximate", "verified", "solved", "series"})
 
 
 class Session:
@@ -70,13 +70,23 @@ class Session:
 
     @staticmethod
     def _snapshot(value, result, capture):
+        if result.details.get("local_identity_only"):
+            raise MathechanError("La identidad sólo es local y no tiene un entorno de validez guardable; no se almacena como función global.")
         conditional = (result.status == "conditional" and
                        (capture.get("restrictions") or capture.get("requirements")))
         def supported(item):
+            from .replacement import RuleValue
+            if isinstance(item, RuleValue):
+                return True
             if isinstance(item, HeldExpression):
                 return True
             if isinstance(item, (sp.Tuple, sp.ImmutableMatrix)):
                 return len(item) <= 64 and all(supported(child) for child in item)
+            if isinstance(item, sp.Expr) and item.has(sp.Order):
+                core = item.removeO()
+                return (core.is_finite is not False and not core.has(sp.zoo, sp.nan, sp.oo, -sp.oo)
+                        and all(not order.expr.has(sp.zoo, sp.nan, sp.oo, -sp.oo)
+                                for order in item.atoms(sp.Order)))
             return (isinstance(item, sp.Expr) and item.is_commutative is True
                     and item.is_finite is not False and not item.has(sp.zoo, sp.nan, sp.oo, -sp.oo))
 

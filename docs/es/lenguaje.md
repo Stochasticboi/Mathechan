@@ -2,14 +2,13 @@
 
 [English](../en/language.md)
 
-Este documento distingue **Mathechan 0.2.0.dev0 en desarrollo** del descargable
-**0.1.1**. El ZIP anterior v0.1.0 conserva su alcance original.
-Consulte [las notas de versión](versiones/0.1.1.md) y
-[las descargas](../../README.md) antes de elegir una distribución.
-La sección «En desarrollo: lenguaje y sesiones» describe cambios posteriores,
-sin nueva release; no debe atribuirse al ZIP publicado de 0.1.1.
+Este documento describe el código **0.2.0.dev2**. La descarga publicada
+**0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
+de dev1 ni las ampliaciones de cálculo y reglas de dev2. Las subsecciones
+históricas de 0.1.1 registran el alcance de esa versión anterior.
+Consulte [las descargas](../../README.md) para elegir una distribución.
 
-Mathechan 0.1.1 ofrece una consola experimental con un parser propio y evaluación
+Mathechan ofrece una consola experimental con un parser propio y evaluación
 matemática mediante SymPy. La sintaxis toma como referencia convenciones de
 Mathematica, pero no ofrece compatibilidad general con Wolfram Language.
 Todavía no hay interfaz gráfica ni editor visual de cuadernos.
@@ -20,7 +19,7 @@ Todavía no hay interfaz gráfica ni editor visual de cuadernos.
 |---|---|
 | Enteros y decimales | Exactos: `0.1+0.2` produce `3/10` |
 | Símbolos | Letras ASCII seguidas de letras o dígitos; distinguen mayúsculas |
-| Constantes | `Pi`, `E`; `Infinity` en límites de integración |
+| Constantes | `Pi`, `E`; `Infinity` en rangos, límites y series |
 | Operadores | `+`, `-`, `*`, `/`, `^`; multiplicación explícita |
 | Agrupación | Paréntesis: `(x+1)^2` |
 | Funciones de un argumento | `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`, `Simplify` |
@@ -56,11 +55,166 @@ reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
 
+## Cálculo y reglas: desarrollo 0.2.0.dev2
+
+Esta sección corresponde al código actual, posterior al ZIP 0.2.0-dev0.
+La sintaxis se aproxima a Wolfram en los casos descritos; no se declara
+compatibilidad con todo su sistema de reglas, series o evaluación.
+
+### Sustitución mediante reglas
+
+```wolfram
+(x^2+a*x) /. x -> 2
+ReplaceAll[x^2+a*x,Rule[x,2]]
+Substitute[x^2+a*x,{x->2}]
+```
+
+Las tres formas devuelven `4+2*a`. Sigue admitiéndose
+`Substitute[expr,x,valor]`, con el alcance local previo de su variable.
+`ReplaceAll` evalúa la expresión y las reglas en el contexto de sesión;
+los valores ya asignados pueden cambiar qué partes quedan disponibles para
+reemplazar. El lado izquierdo de una regla inmediata también se evalúa.
+
+Una lista se aplica en un solo recorrido: `{x,y}/.{x->y,y->2}` da `{y,2}`.
+El primer reemplazo aplicable gana y no se vuelve a recorrer lo recién insertado.
+Para pasos sucesivos, encadenar: `x/.x->y/.y->2` da `2`.
+Se admiten partes exactas, listas, matrices y ecuaciones dentro de los tipos
+actuales; no se implementan el reemplazo de cabezas ni el emparejamiento completo
+por atributos de Wolfram. `//.` no está implementado.
+
+Las reglas son datos guardables: `r=x->a` captura el valor actual de `a`;
+`r=x:>a` (`RuleDelayed`) calcula el lado derecho al aplicar la regla.
+Cargar una sesión no ejecuta ese cuerpo diferido.
+
+```wolfram
+Sin[x]+Sin[y] /. Sin[t_] -> t^2
+{2,1/2,z} /. t_Integer :> t+1
+{N[1/2,20],1/2} /. t_Real -> 0
+```
+
+Los patrones nombrados admitidos son `t_`/`t_Scalar` para escalares,
+`t_Integer` para enteros exactos y `t_Real` para números Float aproximados.
+`_Real` no equivale al constructor previo `RealPattern`, que comprueba la
+propiedad matemática de ser real. Los decimales literales conservan la semántica
+exacta anterior: `0.5` es racional, mientras `N[1/2,20]` es Float.
+No se admiten comodines anónimos, secuencias `__`, condiciones de patrón ni
+el sistema general de atributos. Hasta ocho patrones y 64 reglas por llamada;
+los nombres protegidos no pueden usarse como parámetros de patrón.
+
+Las reglas transforman también restricciones e hipótesis usadas en el cálculo.
+`x/x/.x->0` y `Assuming[x>0,Sqrt[x^2]/.x->-1]` se rechazan aunque la expresión
+se hubiera simplificado. No se reescriben operadores ligados pendientes ni
+restos `O` con `ReplaceAll`; sustituir los parámetros antes de calcular, usar
+`Substitute` cuando corresponda, o extraer explícitamente `Normal`.
+
+### Derivadas y cálculo vectorial
+
+```wolfram
+D[Sin[x],{x,3}]
+D[x^2*y^3,{x,2},y]
+Grad[x^2+y^2,{x,y}]
+Div[{x^2,y^2,z^2},{x,y,z}]
+Curl[{-y,x,0},{x,y,z}]
+Jacobian[{x*y,x+y},{x,y}]
+Hessian[x^2+y^2,{x,y}]
+```
+
+Se admiten derivadas sucesivas y mixtas con órdenes positivos hasta 32 en total,
+parámetros simbólicos y las funciones expuestas por Mathechan. No se presupone
+que un símbolo sea real; por ejemplo, algunas derivadas de `Abs` quedan formales.
+Las condiciones originales se conservan. No se certifica diferenciabilidad global.
+
+Los operadores vectoriales usan coordenadas cartesianas, de una a ocho variables;
+`Curl` requiere tres componentes y variables. `Grad`, `Curl`, `Jacobian` y
+`Hessian` devuelven matrices inmutables; `Div` devuelve un escalar.
+Se comprueban dimensiones y se limita la salida a 64 elementos/4096 operaciones,
+con entrada de hasta 256 operaciones/ocho símbolos. No añade álgebra matricial
+general ni coordenadas curvilíneas.
+
+### Series y aproximaciones locales
+
+```wolfram
+Series[Sin[x],{x,0,5}]
+Series[Exp[x],{x,1,2}]
+Series[1/(x+1),{x,Infinity,2}]
+Normal[Series[Exp[x],{x,0,2}]]
+```
+
+El orden n **incluye el término de grado n**, como en la forma usual de Wolfram:
+el primer ejemplo da `x-x^3/6+x^5/120+O(x^6)`. Admite n de 0 a 31, centros
+reales numéricos y ±Infinity. Un tercer argumento `Left` o `Right` selecciona
+el camino real lateral; en infinito la orientación la fija el punto.
+Incluye Taylor/Maclaurin, Laurent/Puiseux y expansiones asintóticas básicas
+cuando el backend las determina. No se garantiza un radio de convergencia.
+
+`status=series` conserva la naturaleza local y truncada. `exact=true` sólo
+indica ausencia de Float; no convierte el resto en una cota numérica certificada.
+`Normal` elimina el `O` explícitamente y conserva una advertencia y procedencia
+de aproximación; no establece una igualdad global con la función original.
+Las series, incluso con centro infinito, y su orden se pueden guardar en sesión.
+Una identidad sin resto que sólo vale localmente, sin entorno determinado, no
+se almacena como definición global. Los casos paramétricos degenerados se
+excluyen explícitamente: sustituir los parámetros antes de desarrollar permite
+estudiar otra rama. Los fallos conservan una petición sin resolver.
+
+### Sumas y productos ampliados
+
+```wolfram
+Product[k,{k,1,5}]
+Sum[n^2,{n,1,m}]
+Sum[j,{i,1,3},{j,1,i}]
+Sum[1/n^2,{n,1,Infinity}]
+Sum[q^n,{n,0,Infinity}]
+```
+
+Los ejemplos determinados dan `120`, una expresión condicionada a m entero,
+`10` y `Pi^2/6`; la geométrica conserva la condición de convergencia y una
+rama pendiente. Hasta tres rangos: el primero es el exterior. Los límites
+interiores pueden depender de índices exteriores; su integralidad debe poder
+comprobarse. La variable ligada no hereda su valor de sesión.
+
+Un rango finito invertido se considera vacío: suma 0 y producto 1, conservando
+la convención previa de Mathechan, sin adoptar la convención de Karr.
+Se mantienen 1000 términos por rango y 2000 en total, compartidos entre llamadas
+anidadas y reglas. Los límites simbólicos requieren enteros; la convergencia
+infinita sólo se acepta cuando el método la determina. Divergencias y casos
+indecidibles permanecen como `Sum`/`Product` inertes, sin devolver un infinito
+escalar. Para productos infinitos se usa el criterio de convergencia a un valor
+finito **no nulo**; un límite de productos parciales igual a cero se informa
+como producto divergente bajo esa convención. Dominios no verificables quedan
+pendientes; no se cancelan términos indefinidos silenciosamente.
+
+### Integración iterada y funciones especiales
+
+`Integrate` conserva antiderivadas, integrales definidas e impropias, parámetros
+y funciones especiales admitidas por el backend. Por ejemplo,
+`Integrate[Exp[-x^2],x]` produce una expresión con `erf`, aunque esa función
+no tenga todavía una llamada pública de entrada reutilizable.
+
+```wolfram
+Integrate[x*y,x,y]
+Integrate[1,{x,0,1},{y,0,x}]
+Integrate[1,{x,0,1},{y,0,Sqrt[x]}]
+Integrate[Exp[-a*x],{x,0,Infinity}]
+```
+
+Se admiten hasta tres variables distintas, con el primer rango como exterior.
+Los límites dependientes deben ser reales y definidos sobre todo el intervalo
+exterior; las regiones no verificables se rechazan conservadoramente.
+El ejemplo con `Sqrt[x]` da `2/3`; cambiar el rango exterior a [-1,0] se rechaza.
+No se certifican las hipótesis de Fubini ni se intercambia el orden de integración.
+Las antiderivadas omiten constantes aditivas; las condiciones paramétricas y
+ramas pendientes se conservan. No se sustituye automáticamente una integral
+simbólica por una aproximación numérica.
+
+Los presupuestos anteriores son estructurales, no límites efectivos de tiempo
+o memoria ni una garantía de escalabilidad. Estas operaciones no añaden una
+interfaz gráfica ni las herramientas especializadas de las etapas posteriores.
+
 ## En desarrollo: lenguaje y sesiones
 
-El código en desarrollo añade estado local en la API `Session` y la consola
-interactiva de Windows. Sigue en desarrollo, sin cambio de versión ni nueva
-distribución: el ZIP v0.1.1 conserva la evaluación independiente de cada línea.
+La API `Session` y la consola interactiva de Windows mantienen estado local
+desde 0.2.0.dev0. El ZIP anterior v0.1.1 conserva su alcance original.
 La función `evaluate(source)` continúa sin estado y rechaza asignaciones `=`.
 `==` mantiene su significado de igualdad inerte.
 
@@ -536,7 +690,7 @@ del gráfico ni detecta todos los polos. El SVG se guarda en la ruta solicitada.
 ## API Python
 
 `from mathechan import evaluate, MathechanError`.
-`Session` se añade únicamente en el incremento en desarrollo descrito arriba.
+`Session` proporciona el contexto persistente descrito arriba; `evaluate` sigue sin estado.
 `evaluate(source)` devuelve `EvaluationResult` con `kind`, `text`, `latex`,
 `svg`, `points`, `input`, `conditions`, `warnings`, `status`, `exact` y `details`;
 `to_dict()` produce contenido

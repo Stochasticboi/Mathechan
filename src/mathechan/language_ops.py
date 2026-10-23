@@ -20,8 +20,10 @@ SCIENTIFIC_CALLS = frozenset(
         "Collect",
         "Apart",
         "Substitute",
+        "ReplaceAll", "Rule", "RuleDelayed",
         "Sum",
         "Integrate",
+        "Series", "Normal", "Product", "Grad", "Div", "Curl", "Jacobian", "Hessian",
         "Limit",
         "Solve",
         "NSolve",
@@ -53,6 +55,7 @@ class EvaluationState:
             "evaluated": 0,
             "verified": 1,
             "conditional": 2,
+            "series": 3,
             "unverified": 3,
             "unresolved": 4,
             "no_solution": 5,
@@ -321,6 +324,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    from .calculus_language import CALLS, calculus_call
+    if name in CALLS:
+        return calculus_call(node, build, restrictions, state, bindings, functions, definitions)
     if name == "Limit":
         from .limit_language import evaluate_limit
         return evaluate_limit(node, build, restrictions, state, bindings, functions, definitions)
@@ -447,20 +453,6 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             }
         )
         return value
-    if name == "D":
-        arity(node, 2)
-        symbol = variable(node.children[1])
-        scope = {key: value for key, value in bindings.items() if key != str(symbol)}
-        local = []
-        value = scalar(read(node.children[0], local, scope,
-                            definition_scope=shadowed_definitions(symbol)))
-        result = substitute_bindings(sp.diff(value, symbol), bindings)
-        restrictions.extend(
-            checked_restrictions(
-                [substitute_bindings(item, bindings) for item in local]
-            )
-        )
-        return result
     if name == "Substitute":
         arity(node, 3)
         symbol = variable(node.children[1])
@@ -507,8 +499,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             )
         state.warnings.extend(
             item for item in child_state.warnings if "constante aditiva" in item
+            or "aproximación truncada" in item or "O conserva" in item
         )
-        if result.has(sp.Integral, sp.ConditionSet):
+        if result.has(sp.Integral, sp.ConditionSet, sp.Sum, sp.Product, sp.Limit, sp.Derivative):
             state.mark_status("unresolved")
             state.warnings.append(
                 "El resultado sustituido conserva construcciones sin resolver."
@@ -521,66 +514,12 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
                     for _, condition in piecewise.args
                     if condition is not sp.S.true
                 )
+        if child_state.status == "series" or result.has(sp.Order):
+            state.mark_status("series")
         return substitute_bindings(result, bindings)
-    if name == "Sum":
-        arity(node, 2)
-        interval = node.children[1]
-        if interval.kind != "list" or len(interval.children) != 3:
-            raise ValueError(
-                "Sum requiere {índice, mínimo, máximo}, ambos límites enteros finitos."
-            )
-        symbol = variable(interval.children[0])
-        lower, upper = (read(item) for item in interval.children[1:])
-        if not isinstance(lower, sp.Integer) or not isinstance(upper, sp.Integer):
-            raise ValueError("Sum requiere límites enteros exactos y finitos.")
-        count = max(0, int(upper - lower + 1))
-        if count > MAX_SUM_TERMS or state.sum_terms + count > MAX_TOTAL_SUM_TERMS:
-            raise ValueError(
-                "Sum excede el presupuesto: 1000 términos por suma, 2000 en total."
-            )
-        state.sum_terms += count
-        terms = []
-        for index in range(int(lower), int(upper) + 1):
-            scope = dict(bindings, **{str(symbol): sp.Integer(index)})
-            local = []
-            terms.append(scalar(read(node.children[0], local, scope,
-                                     definition_scope=shadowed_definitions(symbol))))
-            restrictions.extend(checked_restrictions(local))
-        return sp.Add(*terms)
     if name == "Integrate":
-        arity(node, 2)
-        specification = node.children[1]
-        bounds = None
-        if specification.kind == "list":
-            if len(specification.children) != 3:
-                raise ValueError("Integrate requiere {variable, mínimo, máximo}.")
-            symbol = variable(specification.children[0])
-            bounds = tuple(scalar(read(item)) for item in specification.children[1:])
-        else:
-            symbol = variable(specification)
-        scope = {key: value for key, value in bindings.items() if key != str(symbol)}
-        local = []
-        expression = scalar(read(node.children[0], local, scope,
-                                 definition_scope=shadowed_definitions(symbol)))
-        if bounds:
-            _check_integral_hypotheses(symbol, bounds, state)
-        outcome = integrate_expression(expression, symbol, bounds)
-        state.absorb(outcome)
-        if bounds:
-            for bound in bounds:
-                if bound.is_extended_real is None:
-                    state.requirements.append(sp.Contains(bound, REAL_BOUNDS))
-                    state.mark_status("conditional")
-        bound_conditions = [item for item in local if symbol in item.free_symbols]
-        restrictions.extend(item for item in local if symbol not in item.free_symbols)
-        if bound_conditions:
-            state.details.setdefault("integrand_conditions", []).extend(
-                condition_text(bound_conditions)
-            )
-            state.warnings.append(
-                "Las exclusiones del integrando en su variable ligada no son condiciones libres del resultado."
-            )
-        return substitute_bindings(outcome.value, bindings)
+        from .integration_language import integration_call
+        return integration_call(node, build, restrictions, state, bindings, functions, definitions)
     if name == "NSolve":
         from .numeric_solve import solve_numerically
         from .numeric_systems import solve_system_numerically

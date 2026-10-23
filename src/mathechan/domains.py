@@ -21,6 +21,33 @@ def condition_text(restrictions):
     )
 
 
+def parameter_domain_conditions(exclusions, variables):
+    """Keep parameter degeneracies of cancelled bound-variable denominators."""
+    free, requirements = [], []
+    symbols = set(variables)
+    for item in exclusions:
+        if not item.free_symbols & symbols:
+            require_nonzero(item, free)
+            continue
+        if sp.count_ops(item) > 256 or len(item.free_symbols) > 8:
+            raise ValueError("La exclusión excede 256 operaciones u ocho símbolos.")
+        constant, dependent = sp.factor_terms(item).as_independent(*variables, as_Add=False)
+        require_nonzero(constant, free)
+        if dependent.free_symbols - symbols:
+            if not dependent.is_polynomial(*variables):
+                raise ValueError("No se puede verificar la degeneración del denominador paramétrico.")
+            from .algebra import _rational_shape
+            _, degree, _, _ = _rational_shape(dependent)
+            if degree > 32:
+                raise ValueError("El denominador paramétrico admite grado total hasta 32.")
+            condition = sp.Or(*(sp.Ne(c, 0) for c in sp.Poly(dependent, *variables).coeffs()))
+            if condition is sp.false:
+                raise ValueError("El denominador es idénticamente nulo.")
+            if condition is not sp.true:
+                requirements.append(condition)
+    return free, requirements
+
+
 def restrictions_at(restrictions, variable, value, coordinate=None):
     """Check a sample; coordinate is an already validated finite interior float.
 

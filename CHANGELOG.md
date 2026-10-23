@@ -1,5 +1,39 @@
 # Versiones / Releases
 
+## 0.2.0.dev2 — Sin publicar / Unreleased
+
+### Español
+
+- Reglas `->`, `:>` y aplicación `/.`/`ReplaceAll`, listas de reglas y patrones
+  escalares nombrados acotados. `Substitute[expr,x,valor]` conserva su forma previa;
+  `Substitute[expr,reglas]` admite la nueva forma. Reglas guardables en sesión,
+  sin ejecutar cuerpos diferidos al cargar.
+- `Series[expr,{x,punto,n}]` incluye el grado n y conserva el resto `O`;
+  `Normal` extrae la aproximación truncada conservando su procedencia.
+- Derivadas superiores y mixtas, productos finitos, sumas/productos simbólicos
+  e infinitos, con resultados condicionados o pendientes cuando corresponda.
+- `Grad`, `Div`, `Curl`, `Jacobian`, `Hessian` en coordenadas cartesianas e
+  integrales iteradas de hasta tres variables, sin certificar el intercambio de orden.
+- Conservación de hipótesis, degeneraciones paramétricas y presupuestos de
+  trabajo compartidos. Documentación y pruebas ES/EN actualizadas.
+- No modifica la release descargable 0.2.0-dev0.
+
+### English
+
+- `->`/`:>` rules and `/.`/`ReplaceAll`, rule lists and bounded named scalar
+  patterns. The original `Substitute[expr,x,value]` remains supported;
+  `Substitute[expr,rules]` accepts the new form. Session persistence never
+  executes delayed rule bodies on load.
+- `Series[expr,{x,point,n}]` includes degree n and retains the `O` remainder;
+  `Normal` extracts the truncated approximation while retaining provenance.
+- Higher/mixed derivatives, finite products, symbolic and infinite aggregates,
+  preserving conditional or unresolved outcomes.
+- Cartesian `Grad`, `Div`, `Curl`, `Jacobian`, `Hessian` and iterated integrals
+  with up to three variables; interchange of integration order is not certified.
+- Preserves assumptions, parameter degeneracies and shared work budgets.
+  Updated bilingual documentation and regression tests.
+- The published 0.2.0-dev0 download is unchanged.
+
 ## 0.2.0.dev1 — Sin publicar / Unreleased
 
 ### Español
