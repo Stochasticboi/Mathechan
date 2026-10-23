@@ -54,7 +54,7 @@ class EvaluationResult:
         return result
 
 
-TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(==|!=|<=|>=|[<>=+*/^(),\[\]{}-]))")
+TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(/\.|->|:>|==|!=|<=|>=|[<>=+*/^(),\[\]{}_-]))")
 
 
 class Parser:
@@ -117,7 +117,11 @@ class Parser:
                 raise MathechanError("Número demasiado largo (máximo 100 caracteres).")
             left = Node("number", token)
         elif token[0].isalpha():
-            if self.peek() == "[":
+            if self.peek() == "_":
+                self.take("_")
+                kind = self.take() if self.peek() in ("Integer", "Real", "Scalar") else "Scalar"
+                left = Node("pattern", token, (Node("name", kind),))
+            elif self.peek() == "[":
                 self.take("[")
                 left = Node("call", token, self.arguments("]"))
             else:
@@ -125,15 +129,18 @@ class Parser:
         else:
             raise MathechanError(f"Inicio de expresión no admitido: {token}.")
         comparisons = {"==", "!=", "<", "<=", ">", ">="}
-        precedence = {**dict.fromkeys(comparisons, 5), "+": 10, "-": 10, "*": 20, "/": 20, "^": 30}
+        precedence = {"/.": 2, "->": 3, ":>": 3, **dict.fromkeys(comparisons, 5), "+": 10, "-": 10, "*": 20, "/": 20, "^": 30}
         while self.peek() in precedence and precedence[self.peek()] >= minimum:
             operator = self.take()
             binding = precedence[operator]
-            right = self.expression(binding if operator == "^" else binding + 1)
+            right = self.expression(binding if operator in ("^", "->", ":>") else binding + 1)
             if operator in comparisons and ((left.kind == "binary" and left.value in comparisons)
                                       or (right.kind == "binary" and right.value in comparisons)):
                 raise MathechanError("No se admiten cadenas de comparaciones; use And o una lista.")
-            left = Node("binary", operator, (left, right))
+            if operator in ("/.", "->", ":>"):
+                left = Node("call", {"/.": "ReplaceAll", "->": "Rule", ":>": "RuleDelayed"}[operator], (left, right))
+            else:
+                left = Node("binary", operator, (left, right))
         self.depth -= 1
         return left
 
@@ -158,6 +165,8 @@ FUNCTIONS = {
 def _stored_value(stored, replacements, restrictions, state):
     """Use immutable snapshots while carrying their original domain conditions."""
     value = stored.value.xreplace(replacements)
+    if value.has(sp.Order) or any("aproximación truncada" in warning for warning in stored.warnings):
+        state.mark_status("series")
     for item in stored.restrictions:
         transformed = item.xreplace(replacements)
         if transformed.is_zero is True or transformed.has(sp.zoo, sp.nan):
@@ -256,6 +265,9 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
             require_nonzero(left, restrictions)
         return left ** right
     if node.kind == "call":
+        if node.value in ("Rule", "RuleDelayed", "ReplaceAll") or (node.value == "Substitute" and len(node.children) == 2):
+            from .replacement import replacement_call
+            return replacement_call(node, build, restrictions, state, bindings, functions, definitions)
         if node.value == "If":
             if len(node.children) != 3:
                 raise MathechanError("Use If[condición,verdadero,falso].")
@@ -435,6 +447,8 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
         restrictions = []
         expression = build(node, restrictions, state, definitions=definitions)
         expression = refine_expression(expression, state.assumptions)
+        if expression.has(sp.Order):
+            state.mark_status("series")
         if capture is not None:
             capture.update(restrictions=tuple(restrictions), requirements=tuple(state.requirements), warnings=tuple(state.warnings))
         if ((expression.has(sp.zoo, sp.nan) and not expression.has(sp.Piecewise))
@@ -456,6 +470,8 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
             kind = "matrix"
         elif isinstance(expression, HeldExpression):
             kind = "held"
+        elif expression.func.__name__ == "RuleValue":
+            kind = "rule"
         elif isinstance(expression, sp.core.relational.Relational) and kind == "expression":
             kind = "inequality"
         elif expression in (sp.true, sp.false) or isinstance(expression, (sp.logic.boolalg.BooleanFunction, sp.Contains)):

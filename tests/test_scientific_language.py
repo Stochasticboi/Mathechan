@@ -152,12 +152,14 @@ class ScientificLanguageTests(unittest.TestCase):
             "Sum[0/n,{n,0,1}]",
             "Sum[n/n,{n,0,1}]",
             "Sum[n,{n,1,1001}]",
-            "Sum[n,{n,0,Infinity}]",
             "Sum[n,{n,0,1/2}]",
             "Sum[Sum[k,{k,1,1000}],{n,1,3}]",
         ):
             with self.subTest(source=source):
                 self.assertRaises(MathechanError, evaluate, source)
+        divergent = evaluate("Sum[n,{n,0,Infinity}]")
+        self.assertEqual(divergent.status, "divergent")
+        self.assertIn("Sum", divergent.text)
 
     def test_equalities_are_inert_and_lists_roundtrip(self):
         equation = self.value("x/x==1")

@@ -25,9 +25,11 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev1** adds bilateral and one-sided `Limit`.
-This increment is not in the 0.2.0-dev0 download. See the
-[language reference](docs/en/language.md).
+Development source **0.2.0.dev2** adds limits, series, products, mixed
+derivatives, Cartesian vector calculus and iterated integrals.
+Replacement supports `expr /. x -> value`, rule lists and delayed rules.
+These increments are not in the 0.2.0-dev0 download. See the
+[language reference](docs/en/language.md) for scope and restrictions.
 
 ## Experimental console
 

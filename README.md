@@ -25,9 +25,11 @@ Las descargas anteriores conservan su alcance original.
 
 ## Desarrollo posterior
 
-El código en desarrollo **0.2.0.dev1** incorpora `Limit` bilateral y lateral.
-Este incremento no está en el descargable 0.2.0-dev0. Véase el
-[lenguaje](docs/es/lenguaje.md).
+El código en desarrollo **0.2.0.dev2** incorpora límites, series, productos,
+derivadas mixtas, cálculo vectorial cartesiano e integrales iteradas.
+La sustitución admite `expr /. x -> valor`, listas de reglas y reglas diferidas.
+Estos incrementos no están en el descargable 0.2.0-dev0. Véase el
+[lenguaje](docs/es/lenguaje.md) para el alcance y sus restricciones.
 
 ## Consola experimental
 

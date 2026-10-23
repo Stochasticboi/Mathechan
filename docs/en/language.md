@@ -2,14 +2,13 @@
 
 [Español](../es/lenguaje.md)
 
-This document distinguishes **Mathechan 0.2.0.dev0 development code** from the
-**0.1.1** download. The earlier v0.1.0 ZIP retains its original scope. Check
-[release notes](releases/0.1.1.md) and [downloads](../../README.en.md) before
-selecting a distribution.
-The “Under development: language and sessions” section describes later changes,
-without a new release; it must not be attributed to the published 0.1.1 ZIP.
+This document describes **0.2.0.dev2 source**. The published **0.2.0-dev0**
+download includes sessions and extended algebra, but not dev1 limits or dev2
+calculus and replacement extensions. Historical 0.1.1 sections record the scope
+of that earlier version. Check [downloads](../../README.en.md) before choosing
+a distribution.
 
-Mathechan 0.1.1 provides an experimental console with its own parser and
+Mathechan provides an experimental console with its own parser and
 mathematical evaluation through SymPy. Its syntax follows selected Mathematica
 conventions but does not provide general Wolfram Language compatibility.
 There is no graphical interface or visual notebook editor yet.
@@ -20,7 +19,7 @@ There is no graphical interface or visual notebook editor yet.
 |---|---|
 | Integers and decimals | Exact: `0.1+0.2` produces `3/10` |
 | Symbols | ASCII letters followed by letters or digits; case-sensitive |
-| Constants | `Pi`, `E`; `Infinity` in integration bounds |
+| Constants | `Pi`, `E`; `Infinity` in ranges, limits and series |
 | Operators | `+`, `-`, `*`, `/`, `^`; multiplication must be explicit |
 | Grouping | Parentheses: `(x+1)^2` |
 | Single-argument functions | `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`, `Simplify` |
@@ -56,12 +55,154 @@ automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
 
+## Calculus and rules: development 0.2.0.dev2
+
+This section describes current source after the 0.2.0-dev0 ZIP. Similar syntax
+does not imply full Wolfram language or evaluation compatibility.
+
+### Replacement rules
+
+```wolfram
+(x^2+a*x) /. x -> 2
+ReplaceAll[x^2+a*x,Rule[x,2]]
+Substitute[x^2+a*x,{x->2}]
+```
+
+All yield `4+2*a`. The original `Substitute[expr,x,value]` retains its bound-name
+behaviour. `ReplaceAll` evaluates its expression and rules in the session;
+existing assignments can change the parts available to replace, and an immediate
+rule's left side is evaluated too.
+
+Rules in a list act in one pass: `{x,y}/.{x->y,y->2}` yields `{y,2}`. The first
+matching rule wins and inserted results are not revisited. Chain calls for
+successive steps: `x/.x->y/.y->2` yields `2`. Exact parts, lists, matrices and
+equations are supported within current types. Head replacement, complete
+attribute-based matching and `//.` are not implemented.
+
+Rules can be stored: `r=x->a` captures the current value; `r=x:>a`
+(`RuleDelayed`) evaluates the right side on application. Loading a session
+never runs a delayed body.
+
+```wolfram
+Sin[x]+Sin[y] /. Sin[t_] -> t^2
+{2,1/2,z} /. t_Integer :> t+1
+{N[1/2,20],1/2} /. t_Real -> 0
+```
+
+Named patterns are bounded to scalars: `t_`/`t_Scalar`, exact integers
+`t_Integer`, and approximate Float numbers `t_Real`. The latter differs from
+the existing `RealPattern` helper, which tests mathematical realness. Literal
+`0.5` remains an exact rational; `N[1/2,20]` is Float. Anonymous blanks,
+sequence patterns and pattern conditions are unsupported. At most eight
+patterns and 64 rules per call; protected names cannot name pattern parameters.
+
+Original exclusions and assumptions are transformed as well. `x/x/.x->0` and
+`Assuming[x>0,Sqrt[x^2]/.x->-1]` are rejected even after simplification.
+`ReplaceAll` does not rewrite retained bound operators or `O` remainders;
+substitute parameters before computation, use `Substitute` where applicable,
+or explicitly extract `Normal`.
+
+### Derivatives and Cartesian vector calculus
+
+```wolfram
+D[Sin[x],{x,3}]
+D[x^2*y^3,{x,2},y]
+Grad[x^2+y^2,{x,y}]
+Div[{x^2,y^2,z^2},{x,y,z}]
+Curl[{-y,x,0},{x,y,z}]
+Jacobian[{x*y,x+y},{x,y}]
+Hessian[x^2+y^2,{x,y}]
+```
+
+Supports successive/mixed positive derivative orders totalling at most 32,
+symbolic parameters and currently exposed functions. Symbols are not assumed
+real; some `Abs` derivatives remain formal. Domain restrictions survive;
+global differentiability is not certified.
+
+Vector operators use Cartesian coordinates with one to eight variables;
+`Curl` requires three components and variables. `Grad`, `Curl`, `Jacobian` and
+`Hessian` return immutable matrices; `Div` returns a scalar. Dimensions are
+checked: at most 64 output elements/4096 operations and 256 input operations/
+eight symbols. General matrix algebra and curvilinear coordinates are not added.
+
+### Local series
+
+```wolfram
+Series[Sin[x],{x,0,5}]
+Series[Exp[x],{x,1,2}]
+Series[1/(x+1),{x,Infinity,2}]
+Normal[Series[Exp[x],{x,0,2}]]
+```
+
+Order n includes degree n: the first result is
+`x-x^3/6+x^5/120+O(x^6)`. Orders 0–31, numerical real centres and ±Infinity
+are supported. An optional `Left`/`Right` argument selects the real path;
+infinity fixes its orientation. Taylor/Maclaurin, basic Laurent/Puiseux and
+asymptotic expansions are returned when determined by the backend. No
+convergence radius is guaranteed.
+
+`status=series` retains local, truncated meaning. `exact=true` only describes
+the absence of Float, not a certified numerical remainder bound. `Normal`
+explicitly removes `O` while retaining approximation warnings and provenance;
+it does not prove global equality. Series and their orders, including at
+infinity, can be saved in sessions. A remainder-free identity valid only
+locally with an undetermined neighbourhood cannot be stored as a global
+definition. Parameter degeneracies retain explicit exclusions; substitute
+parameters before expanding to study another branch. Failures stay unresolved.
+
+### Extended aggregates
+
+```wolfram
+Product[k,{k,1,5}]
+Sum[n^2,{n,1,m}]
+Sum[j,{i,1,3},{j,1,i}]
+Sum[1/n^2,{n,1,Infinity}]
+Sum[q^n,{n,0,Infinity}]
+```
+
+Determined examples yield `120`, an expression conditional on integer m,
+`10`, and `Pi^2/6`; the geometric series retains convergence conditions and a
+pending branch. Up to three ranges, outermost first. Inner bounds may depend
+on outer indices when their integrality can be checked. Bound names ignore
+same-named session assignments.
+
+Reversed finite ranges remain empty: sum 0 and product 1, preserving Mathechan's
+previous convention rather than Karr's. Limits remain 1000 terms per range and
+2000 total, shared by nested calls and rules. Symbolic finite bounds require
+integers. Infinite convergence must be determined; divergent or undecidable
+requests stay inert, without scalar infinities. Infinite products use the
+finite nonzero convergence convention: partial products tending to zero are
+reported as divergent. Unverified summand domains remain pending; undefined
+terms are not silently cancelled.
+
+### Iterated integration
+
+`Integrate` retains indefinite, definite and improper integrals, parameters,
+and backend-supported special-function results. `Integrate[Exp[-x^2],x]`, for
+example, produces `erf` even though it has no public reusable input call yet.
+
+```wolfram
+Integrate[x*y,x,y]
+Integrate[1,{x,0,1},{y,0,x}]
+Integrate[1,{x,0,1},{y,0,Sqrt[x]}]
+Integrate[Exp[-a*x],{x,0,Infinity}]
+```
+
+At most three distinct variables, outermost range first. Dependent bounds must
+be real and defined throughout the outer interval; unverifiable regions are
+conservatively rejected. The square-root example yields `2/3`; an outer range
+[-1,0] is rejected. Fubini conditions and interchange of integration order are
+not certified. Antiderivatives omit additive constants. Parameter conditions
+and pending branches remain explicit; no automatic numerical fallback is used.
+
+Budgets are structural, not effective execution-time/memory limits or scaling
+guarantees. No graphical interface or later-stage specialised physics tools
+are added by this increment.
+
 ## Under development: language and sessions
 
-The development code adds local state through the `Session` API and the
-Windows interactive console. It remains under development, without a version
-bump or new distribution: the v0.1.1 ZIP retains independent evaluation of
-each line. The `evaluate(source)` function remains stateless and rejects `=`
+The `Session` API and Windows interactive console provide local state from
+0.2.0.dev0 onward. The earlier v0.1.1 ZIP retains its original scope. The `evaluate(source)` function remains stateless and rejects `=`
 assignments. `==` remains an inert equality.
 
 A session accepts one immediate root assignment `name=expression` per call.
@@ -524,7 +665,7 @@ is saved at the requested path.
 ## Python API
 
 `from mathechan import evaluate, MathechanError`.
-`Session` is added only in the development increment described above.
+`Session` provides the persistent context described above; `evaluate` remains stateless.
 `evaluate(source)` returns `EvaluationResult` with `kind`, `text`, `latex`,
 `svg`, `points`, `input`, `conditions`, `warnings`, `status`, `exact`, and `details`;
 `to_dict()` produces

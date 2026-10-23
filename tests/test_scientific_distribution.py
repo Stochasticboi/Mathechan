@@ -48,6 +48,18 @@ def references():
             "conditions": ["((-1+x)) != 0"],
         },
         "Substitute[a*x,a,2]": {"kind": "expression", "text": "2*x"},
+        "(x^2+a*x)/.x->2": {"kind": "expression", "text": "2*a + 4"},
+        "D[x^2*y^3,{x,2},y]": {"kind": "expression", "text": "6*y**2"},
+        "Series[Sin[x],{x,0,5}]": {"kind": "expression", "text": "x - x**3/6 + x**5/120 + O(x**6)",
+                                   "status": "series", "details": {"global_equality": False, "truncated": True, "remainder": ["O(x**6)"]}},
+        "Product[k,{k,1,5}]": {"kind": "expression", "text": "120"},
+        "Sum[1/n^2,{n,1,Infinity}]": {"kind": "expression", "text": "pi**2/6"},
+        "Curl[{-y,x,0},{x,y,z}]": {"kind": "matrix", "text": "Matrix([\n[0],\n[0],\n[2]])"},
+        "Integrate[1,{x,0,1},{y,0,x}]": {"kind": "expression", "text": "1/2"},
+        "Limit[Sin[x]/x,x,0]": {"kind": "expression", "text": "1"},
+        "Normal[Series[Exp[x],{x,0,2}]]": {"kind": "expression", "text": "x**2/2 + x + 1",
+                                           "status": "series", "warnings": ["local approximation"],
+                                           "details": {"normal": {"global_equality": False}}},
         "Sum[n^2,{n,1,3}]": {"kind": "expression", "text": "14"},
         "Integrate[x^2,{x,0,1}]": {"kind": "expression", "text": "1/3"},
         "Solve[x^2==4,x]": {
@@ -95,7 +107,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 9)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 18)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -165,7 +177,7 @@ class ScientificPayloadTests(unittest.TestCase):
 
 
 class ScientificSmokeTests(unittest.TestCase):
-    def test_scientific_mode_executes_nine_additional_json_checks(self):
+    def test_scientific_mode_executes_eighteen_additional_json_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "application.exe"
             executable.write_bytes(b"fixture")
@@ -201,8 +213,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 13)
-            self.assertEqual(runner.call_count, 13)
+            self.assertEqual(len(checks), 22)
+            self.assertEqual(runner.call_count, 22)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

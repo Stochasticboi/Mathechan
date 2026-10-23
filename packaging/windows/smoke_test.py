@@ -25,6 +25,15 @@ SCIENTIFIC_CASES = (
     ("definite-integral", "Integrate[x^2,{x,0,1}]"),
     ("algebraic-solutions", "Solve[x^2==4,x]"),
     ("verified-initial-value-ode", "DSolve[{D[y[x],x]==-2*y[x],y[0]==3},y[x],x]"),
+    ("wolfram-replacement", "(x^2+a*x)/.x->2"),
+    ("mixed-derivative", "D[x^2*y^3,{x,2},y]"),
+    ("taylor-remainder", "Series[Sin[x],{x,0,5}]"),
+    ("finite-product", "Product[k,{k,1,5}]"),
+    ("convergent-infinite-sum", "Sum[1/n^2,{n,1,Infinity}]"),
+    ("cartesian-curl", "Curl[{-y,x,0},{x,y,z}]"),
+    ("iterated-integral", "Integrate[1,{x,0,1},{y,0,x}]"),
+    ("bilateral-limit", "Limit[Sin[x]/x,x,0]"),
+    ("series-normal", "Normal[Series[Exp[x],{x,0,2}]]"),
 )
 
 EXACT_REFERENCES = {
@@ -36,6 +45,15 @@ EXACT_REFERENCES = {
     "Integrate[x^2,{x,0,1}]": ("expression", "1/3"),
     "Solve[x^2==4,x]": ("solutions", "{-2, 2}"),
     "DSolve[{D[y[x],x]==-2*y[x],y[0]==3},y[x],x]": ("solutions", "Eq(y(x), 3*exp(-2*x))"),
+    "(x^2+a*x)/.x->2": ("expression", "2*a + 4"),
+    "D[x^2*y^3,{x,2},y]": ("expression", "6*y**2"),
+    "Series[Sin[x],{x,0,5}]": ("expression", "x - x**3/6 + x**5/120 + O(x**6)"),
+    "Product[k,{k,1,5}]": ("expression", "120"),
+    "Sum[1/n^2,{n,1,Infinity}]": ("expression", "pi**2/6"),
+    "Curl[{-y,x,0},{x,y,z}]": ("matrix", "Matrix([\n[0],\n[0],\n[2]])"),
+    "Integrate[1,{x,0,1},{y,0,x}]": ("expression", "1/2"),
+    "Limit[Sin[x]/x,x,0]": ("expression", "1"),
+    "Normal[Series[Exp[x],{x,0,2}]]": ("expression", "x**2/2 + x + 1"),
 }
 
 
@@ -88,11 +106,18 @@ def check_scientific_payload(source, payload):
         return
     require(source in EXACT_REFERENCES, f"Unknown scientific reference: {source}")
     kind, text = EXACT_REFERENCES[source]
-    expected_status = "verified" if source.startswith("DSolve[") else "evaluated"
+    expected_status = ("verified" if source.startswith("DSolve[") else "series"
+                       if source.startswith(("Series[", "Normal[")) else "evaluated")
     require(payload.get("kind") == kind and payload["text"] == text,
             f"Unexpected exact scientific result: {source}")
     require(payload.get("exact") is True and payload.get("status") == expected_status,
             f"Unexpected scientific exactness or status: {source}")
+    if source.startswith("Series["):
+        require(details.get("global_equality") is False and details.get("truncated") is True
+                and details.get("remainder") == ["O(x**6)"], "Series lost its local remainder metadata.")
+    if source.startswith("Normal["):
+        require(details.get("normal", {}).get("global_equality") is False and bool(payload["warnings"]),
+                "Normal must retain its approximation provenance.")
     if source.startswith("Together["):
         require(set(payload["conditions"]) == {"(x) != 0", "(y) != 0"}, "Together lost its original domain conditions.")
     elif source.startswith("Cancel["):
@@ -226,7 +251,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("executable", type=Path)
     parser.add_argument("--timeout", type=float, default=60, help="Timeout per invocation in seconds")
-    parser.add_argument("--scientific", action="store_true", help="Also verify the nine scientific operations")
+    parser.add_argument("--scientific", action="store_true", help="Also verify scientific and calculus operations")
     parser.add_argument("--sessions", action="store_true", help="Also verify numerical assignment sessions")
     args = parser.parse_args(argv)
     try:

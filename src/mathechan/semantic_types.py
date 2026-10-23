@@ -30,6 +30,8 @@ def _source(node):
         return "{" + ",".join(_source(child) for child in node.children) + "}"
     if node.kind == "call":
         return node.value + "[" + ",".join(_source(child) for child in node.children) + "]"
+    if node.kind == "pattern":
+        return node.value + "_" + (node.children[0].value if node.children[0].value != "Scalar" else "")
     if node.kind == "unary":
         return "(" + node.value + _source(node.children[0]) + ")"
     if node.kind == "binary":
