@@ -26,6 +26,8 @@ def _unpack(value):
 def _source(node):
     if node.kind in {"name", "number"}:
         return node.value
+    if node.kind == "string":
+        return '"' + node.value + '"'
     if node.kind == "list":
         return "{" + ",".join(_source(child) for child in node.children) + "}"
     if node.kind == "call":

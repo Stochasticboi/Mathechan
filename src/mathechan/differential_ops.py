@@ -112,27 +112,36 @@ def _vector(expression):
     return tuple(_scalar(item) for item in items)
 
 
-def vector_expression(operation, expr, variables):
-    """Cartesian operators only; these functions do not provide matrix algebra."""
+def vector_expression(operation, expr, variables, chart="Cartesian", mode="Components"):
+    """Cartesian defaults, with explicit cylindrical or spherical charts."""
+    if chart in ("Cylindrical", "Spherical"):
+        from .coordinate_calculus import coordinate_operator
+        return coordinate_operator(operation, expr, variables, chart, mode)
+    if chart != "Cartesian" or mode not in ("Components", "Orthonormal"):
+        raise ValueError("Sistema de coordenadas o modo no admitido.")
     variables = _variables(variables)
     if operation not in {"Grad", "Div", "Curl", "Jacobian", "Hessian"}:
         raise ValueError("Operador diferencial vectorial desconocido.")
-    scalar_operation = operation in {"Grad", "Hessian"}
+    scalar_operation = operation == "Hessian" or operation == "Grad" and isinstance(expr, sp.Expr)
     expressions = (_scalar(expr),) if scalar_operation else _vector(expr)
     _budget(expressions, variables)
     dimension = len(variables)
     if operation in {"Div", "Curl"} and len(expressions) != dimension:
         raise ValueError("El campo debe tener tantas componentes como coordenadas.")
+    if operation == "Grad" and not scalar_operation and len(expressions) != dimension:
+        raise ValueError("El campo debe tener tantas componentes como coordenadas.")
     if operation == "Curl" and dimension != 3:
         raise ValueError("Curl requiere exactamente tres coordenadas cartesianas.")
-    if operation == "Grad":
+    if operation == "Grad" and scalar_operation:
         value = sp.ImmutableMatrix([sp.diff(expr, variable) for variable in variables])
     elif operation == "Hessian":
         value = sp.ImmutableMatrix(sp.hessian(expr, variables))
     elif operation == "Div":
         value = sum((sp.diff(component, variable)
                      for component, variable in zip(expressions, variables)), sp.S.Zero)
-    elif operation == "Jacobian":
+    elif operation in ("Jacobian", "Grad"):
+        if mode == "Orthonormal" and len(expressions) != dimension:
+            raise ValueError("El gradiente de un campo requiere tantas componentes como coordenadas.")
         value = sp.ImmutableMatrix(expressions).jacobian(variables).as_immutable()
     else:
         x, y, z = variables

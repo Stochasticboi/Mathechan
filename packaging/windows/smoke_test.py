@@ -34,7 +34,22 @@ SCIENTIFIC_CASES = (
     ("iterated-integral", "Integrate[1,{x,0,1},{y,0,x}]"),
     ("bilateral-limit", "Limit[Sin[x]/x,x,0]"),
     ("series-normal", "Normal[Series[Exp[x],{x,0,2}]]"),
+    ("spherical-gradient", 'Grad[r^2,{r,theta,phi},"Spherical"]'),
+    ("spherical-divergence", 'Div[{r,0,0},{r,theta,phi},"Spherical"]'),
+    ("cylindrical-curl", 'Curl[{0,rho,0},{rho,phi,z},"Cylindrical"]'),
+    ("geometric-hessian", 'Hessian[r^2/2,{r,theta,phi},"Spherical"]'),
+    ("component-jacobian", 'Jacobian[{r,0,0},{r,theta,phi},"Spherical"]'),
+    ("physical-vector-gradient", 'Jacobian[{r,0,0},{r,theta,phi},"Spherical","Orthonormal"]'),
 )
+
+CURVILINEAR_REFERENCES = {
+    SCIENTIFIC_CASES[-6][1]: ("matrix", "Matrix([\n[2*r],\n[  0],\n[  0]])", "Spherical", "orthonormal"),
+    SCIENTIFIC_CASES[-5][1]: ("expression", "3", "Spherical", "orthonormal"),
+    SCIENTIFIC_CASES[-4][1]: ("matrix", "Matrix([\n[0],\n[0],\n[2]])", "Cylindrical", "orthonormal"),
+    SCIENTIFIC_CASES[-3][1]: ("matrix", "Matrix([\n[1, 0, 0],\n[0, 1, 0],\n[0, 0, 1]])", "Spherical", "orthonormal"),
+    SCIENTIFIC_CASES[-2][1]: ("matrix", "Matrix([\n[1, 0, 0],\n[0, 0, 0],\n[0, 0, 0]])", "Spherical", "component_functions_by_coordinate"),
+    SCIENTIFIC_CASES[-1][1]: ("matrix", "Matrix([\n[1, 0, 0],\n[0, 1, 0],\n[0, 0, 1]])", "Spherical", "orthonormal"),
+}
 
 EXACT_REFERENCES = {
     "Factor[x^2-1]": ("expression", "(x - 1)*(x + 1)"),
@@ -103,6 +118,19 @@ def check_scientific_payload(source, payload):
                 require(abs(value - reference) <= Decimal("5e-30"), "N does not meet the 30-digit pi reference.")
         except InvalidOperation as error:
             raise SmokeTestError("N did not return a decimal value.") from error
+        return
+    if source in CURVILINEAR_REFERENCES:
+        kind, text, chart, basis = CURVILINEAR_REFERENCES[source]
+        require(payload.get("kind") == kind and payload["text"] == text,
+                f"Unexpected exact curvilinear result: {source}")
+        require(payload.get("exact") is True and payload.get("status") == "conditional",
+                "Curvilinear results must preserve the regular chart domain.")
+        required = ({"Contains(r, Reals)", "Contains(theta, Reals)", "Contains(phi, Reals)",
+                     "r > 0", "theta > 0", "theta < pi"} if chart == "Spherical" else
+                    {"Contains(rho, Reals)", "Contains(phi, Reals)", "Contains(z, Reals)", "rho > 0"})
+        require(required.issubset(payload["conditions"]), "Curvilinear result lost chart requirements.")
+        require(details.get("coordinates") == chart and details.get("basis") == basis,
+                "Curvilinear result lost chart or basis metadata.")
         return
     require(source in EXACT_REFERENCES, f"Unknown scientific reference: {source}")
     kind, text = EXACT_REFERENCES[source]

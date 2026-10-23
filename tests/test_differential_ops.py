@@ -78,7 +78,7 @@ class DifferentialOperationsTests(unittest.TestCase):
     def test_dimension_and_scalar_validation(self):
         x, y, z = self.x, self.y, self.z
         cases = [("Curl", [x, y], [x, y]), ("Div", [x], [x, y]),
-                 ("Grad", [x], [x]), ("Hessian", sp.Eq(x, 0), [x]),
+                 ("Grad", [x,y], [x]), ("Hessian", sp.Eq(x, 0), [x]),
                  ("Jacobian", sp.Matrix([[x, y]]), [x, y]),
                  ("Grad", x, [x, x]), ("Grad", x, []),
                  ("Grad", x, [sp.Integer(1)]), ("Other", x, [x])]

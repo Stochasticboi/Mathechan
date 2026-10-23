@@ -54,7 +54,7 @@ class EvaluationResult:
         return result
 
 
-TOKEN = re.compile(r"\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|(/\.|->|:>|==|!=|<=|>=|[<>=+*/^(),\[\]{}_-]))")
+TOKEN = re.compile(r'\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|("[A-Za-z][A-Za-z0-9]*")|(/\.|->|:>|==|!=|<=|>=|[<>=+*/^(),\[\]{}_-]))')
 
 
 class Parser:
@@ -116,6 +116,10 @@ class Parser:
             if len(token) > 100:
                 raise MathechanError("Número demasiado largo (máximo 100 caracteres).")
             left = Node("number", token)
+        elif token.startswith('"'):
+            if token[1:-1] not in ("Cartesian", "Cylindrical", "Spherical", "Components", "Orthonormal"):
+                raise MathechanError("Los textos sólo se admiten como opciones de coordenadas conocidas.")
+            left = Node("string", token[1:-1])
         elif token[0].isalpha():
             if self.peek() == "_":
                 self.take("_")
