@@ -4,9 +4,11 @@ from dataclasses import dataclass, field
 
 import sympy as sp
 
+from .matrix_language import LINEAR_CALLS
+
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | frozenset(
     {
         "N",
         "If",
@@ -324,6 +326,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in LINEAR_CALLS:
+        from .matrix_language import matrix_call
+        return matrix_call(node, build, restrictions, state, bindings, functions, definitions)
     from .calculus_language import CALLS, calculus_call
     if name in CALLS:
         return calculus_call(node, build, restrictions, state, bindings, functions, definitions)
@@ -445,7 +450,14 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         precision = (
             read(node.children[1]) if len(node.children) == 2 else sp.Integer(15)
         )
-        value = algebra.numerical(scalar(read(node.children[0])), precision)
+        expression = read(node.children[0])
+        if isinstance(expression, (sp.MatrixBase, sp.Tuple)):
+            from .matrix_language import numerical_container
+            value = numerical_container(expression, precision)
+        else:
+            value = algebra.numerical(scalar(expression), precision)
+        if expression.has(sp.Float):
+            state.warnings.append("La precisión solicitada no recupera información perdida en los datos aproximados de entrada.")
         state.details.setdefault("numeric_evaluations", []).append(
             {
                 "requested_significant_digits": int(precision),

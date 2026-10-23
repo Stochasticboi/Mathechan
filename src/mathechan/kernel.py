@@ -54,7 +54,7 @@ class EvaluationResult:
         return result
 
 
-TOKEN = re.compile(r'\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|("[A-Za-z][A-Za-z0-9]*")|(/\.|->|:>|==|!=|<=|>=|[<>=+*/^(),\[\]{}_-]))')
+TOKEN = re.compile(r'\s*(?:(\d+(?:\.\d+)?)|([A-Za-z][A-Za-z0-9]*)|("[A-Za-z][A-Za-z0-9]*")|(/\.|->|:>|==|!=|<=|>=|[.<>=+*/^(),\[\]{}_-]))')
 
 
 class Parser:
@@ -133,7 +133,7 @@ class Parser:
         else:
             raise MathechanError(f"Inicio de expresión no admitido: {token}.")
         comparisons = {"==", "!=", "<", "<=", ">", ">="}
-        precedence = {"/.": 2, "->": 3, ":>": 3, **dict.fromkeys(comparisons, 5), "+": 10, "-": 10, "*": 20, "/": 20, "^": 30}
+        precedence = {"/.": 2, "->": 3, ":>": 3, **dict.fromkeys(comparisons, 5), "+": 10, "-": 10, "*": 20, "/": 20, ".": 22, "^": 30}
         while self.peek() in precedence and precedence[self.peek()] >= minimum:
             operator = self.take()
             binding = precedence[operator]
@@ -141,7 +141,9 @@ class Parser:
             if operator in comparisons and ((left.kind == "binary" and left.value in comparisons)
                                       or (right.kind == "binary" and right.value in comparisons)):
                 raise MathechanError("No se admiten cadenas de comparaciones; use And o una lista.")
-            if operator in ("/.", "->", ":>"):
+            if operator == ".":
+                left = Node("call", "Dot", (left, right))
+            elif operator in ("/.", "->", ":>"):
                 left = Node("call", {"/.": "ReplaceAll", "->": "Rule", ":>": "RuleDelayed"}[operator], (left, right))
             else:
                 left = Node("binary", operator, (left, right))
@@ -240,11 +242,17 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
         return sp.Tuple(*(read(child) for child in node.children))
     if node.kind == "unary":
         value = read(node.children[0])
+        if isinstance(value, (sp.MatrixBase, sp.Tuple)):
+            from .matrix_language import matrix_binary
+            return matrix_binary("*", sp.S.One if node.value == "+" else -sp.S.One, value, state)
         if not isinstance(value, sp.Expr):
             raise MathechanError("Los signos requieren una expresión escalar.")
         return value if node.value == "+" else -value
     if node.kind == "binary":
         left, right = (read(child) for child in node.children)
+        if isinstance(left, (sp.MatrixBase, sp.Tuple)) or isinstance(right, (sp.MatrixBase, sp.Tuple)):
+            from .matrix_language import matrix_binary
+            return matrix_binary(node.value, left, right, state)
         if not isinstance(left, sp.Expr) or not isinstance(right, sp.Expr):
             raise MathechanError("Los operadores requieren expresiones escalares.")
         if node.value == "==":

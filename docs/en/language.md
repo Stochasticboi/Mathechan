@@ -2,9 +2,9 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev3 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev4 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
-calculus and replacement extensions, or dev3 curvilinear charts. Historical 0.1.1 sections record the scope
+calculus and replacement extensions, dev3 curvilinear charts, or dev4 linear algebra. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -54,6 +54,74 @@ the bounded `DSolve` context, not as arbitrary definitions. Symbols are not
 automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
+
+## Linear algebra: development 0.2.0.dev4
+
+Functions accept `Matrix[{{...},{...}}]` and nested rectangular lists.
+A flat list is an unoriented vector for `Dot`; `Vector[{...}]` is an explicit
+column matrix. Entries may be exact, symbolic, or approximate. Literal decimals
+remain exact rationals; `N[matrix,50]` or `N[list,50]` creates approximate entries.
+
+| Operation | Syntax and result |
+|---|---|
+| Size | `Dimensions[A]`: dimension list; flat vectors have one dimension. |
+| Arithmetic | `A+B`, `A-B`, `-A`, `c*A`, `A/c`; matching shapes for addition/subtraction, nonzero scalar divisor. |
+| Product | `Dot[A,B]` or `A.B`, including chains and matrix-vector/vector-matrix contractions. |
+| Transpose and trace | `Transpose[A]`, `Tr[A]`; transpose does not conjugate. |
+| Determinant and inverse | `Det[A]`, `Inverse[A]`; square matrix, inverse requires a nonzero determinant. |
+| Rank | `MatrixRank[A]`; parameter-dependent ranks retain explicit branch requirements. |
+| Systems | `LinearSolve[A,b]` solves `A x=b`; matrix right-hand sides are supported. |
+| Spectrum | `Eigenvalues[A]`, `Eigenvectors[A]`; conventions below. |
+| Power | `MatrixPower[A,n]` or `A^n`, integer -32 to 32; negative powers require an inverse. |
+| Exponential | `MatrixExp[A]`, including non-diagonalizable matrices. |
+
+`A*B` preserves the historical matrix product, rather than elementwise multiplication.
+Prefer `Dot` or `.` for an explicit product. Two flat vectors require `Dot`;
+their `*` product is rejected as ambiguous. Contractions are bilinear without
+complex conjugation. Dot binds more tightly than `*` and less tightly than `^`;
+`1.25` remains a decimal token. Vector results support addition, subtraction,
+negation and scalar multiplication/division while retaining list form.
+
+```wolfram
+Dot[{{1,2},{3,4}},{{5,6},{7,8}}]
+Det[{{1,2},{3,4}}]
+LinearSolve[{{2,0},{0,3}},{4,9}]
+MatrixExp[{{0,1},{0,0}}]
+```
+
+The results are respectively a matrix with rows `{19,22}` and `{43,50}`, `-2`,
+`{2,3}`, and a matrix with rows `{1,1}` and `{0,1}`.
+
+Exact systems distinguish unique solutions, families with independent internal
+parameters, and the empty set with `no_solution` status. For a constant
+coefficient matrix, compatibility equations such as `b==0` are retained with
+the conditional solution when needed. Inconsistent systems
+are never silently replaced by least squares. Rectangular parametric systems
+require specialization when their branch cannot be determined. Inverse, rank
+and eigenspace requirements are executable and survive replacement and session
+storage; excluded specializations require recalculation from the original matrix.
+
+Eigenvalues use SymPy's `default_sort_key` ordering and algebraic multiplicity.
+Eigenvectors are unnormalized right vectors grouped by eigenvalue;
+`details.eigenvalues_for_vectors` gives their pairing. Defective matrices return
+only available independent vectors, with `basis_complete=false` and no zero padding.
+Symbolic diagonal matrices retain a universal basis; multiplicities may require
+specialization. Floating spectral input is treated as its stored binary rational
+values, with numerical evaluation afterwards; input uncertainty and correct
+output digits are not certified.
+
+Approximate systems report residuals and, where applicable, a condition estimate.
+Approximate eigenvectors include residual checks and warnings for ill-conditioned
+bases. Numerical rank has no configurable tolerance, so a tiny pivot may count as
+nonzero. Increasing precision cannot recover information lost in approximate input.
+
+Scope: dense matrices up to eight rows/columns and 64 entries, 256 input symbolic
+operations and 4096 output operations/64 entries. Spectral operations allow up
+to 4×4 and eight symbols; order-four matrices with parameters or approximate
+entries must be triangular. Dense symbolic 3×3 matrices allow up to three symbols
+and 64 input operations. Spectral input precision is limited to 80 digits.
+These are structural budgets, not hard time or memory limits. Sparse matrices
+and additional native numerical libraries are outside this stage.
 
 ## Calculus and rules: development 0.2.0.dev3
 
