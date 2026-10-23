@@ -25,6 +25,18 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "Dimensions[{{1,2},{3,4}}]": {"kind": "list", "text": "{2,2}"},
+        "{{1,2},{3,4}}.{{5,6},{7,8}}": {"kind": "matrix", "text": "Matrix([\n[19, 22],\n[43, 50]])"},
+        "Transpose[{{1,2},{3,4}}]": {"kind": "matrix", "text": "Matrix([\n[1, 3],\n[2, 4]])"},
+        "Tr[{{1,2},{3,4}}]": {"kind": "expression", "text": "5"},
+        "Det[{{1,2},{3,4}}]": {"kind": "expression", "text": "-2"},
+        "Inverse[{{1,2},{3,4}}]": {"kind": "matrix", "text": "Matrix([\n[ -2,    1],\n[3/2, -1/2]])"},
+        "MatrixRank[{{1,2},{2,4}}]": {"kind": "expression", "text": "1"},
+        "LinearSolve[{{2,0},{0,3}},{4,9}]": {"kind": "list", "text": "{2,3}"},
+        "Eigenvalues[{{1,0},{0,2}}]": {"kind": "list", "text": "{1,2}"},
+        "Eigenvectors[{{1,0},{0,2}}]": {"kind": "list", "text": "{{1,0},{0,1}}"},
+        "MatrixPower[{{1,1},{0,1}},3]": {"kind": "matrix", "text": "Matrix([\n[1, 3],\n[0, 1]])"},
+        "MatrixExp[{{0,1},{0,0}}]": {"kind": "matrix", "text": "Matrix([\n[1, 1],\n[0, 1]])"},
         "N[Pi,30]": {
             "kind": "expression",
             "text": "3.14159265358979323846264338328",
@@ -120,7 +132,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 24)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 36)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -198,7 +210,7 @@ class ScientificPayloadTests(unittest.TestCase):
 
 
 class ScientificSmokeTests(unittest.TestCase):
-    def test_scientific_mode_executes_twenty_four_additional_json_checks(self):
+    def test_scientific_mode_executes_thirty_six_additional_json_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "application.exe"
             executable.write_bytes(b"fixture")
@@ -234,8 +246,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 28)
-            self.assertEqual(runner.call_count, 28)
+            self.assertEqual(len(checks), 40)
+            self.assertEqual(runner.call_count, 40)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

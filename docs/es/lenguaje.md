@@ -2,10 +2,10 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev3**. La descarga publicada
+Este documento describe el código **0.2.0.dev4**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
-de dev3. Las subsecciones
+de dev3 ni el álgebra lineal de dev4. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -55,6 +55,77 @@ contexto acotado de `DSolve`; no habilita definiciones arbitrarias. Los símbolo
 reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
+
+## Álgebra lineal: desarrollo 0.2.0.dev4
+
+Las funciones aceptan `Matrix[{{...},{...}}]` y listas rectangulares anidadas.
+Una lista plana representa un vector sin orientación en `Dot`; `Vector[{...}]`
+es una matriz columna explícita. Las entradas son escalares exactos, simbólicos
+o aproximados. Los decimales literales siguen siendo racionales exactos:
+`N[matriz,50]` o `N[lista,50]` produce entradas aproximadas a la precisión solicitada.
+
+| Operación | Sintaxis y resultado |
+|---|---|
+| Tamaño | `Dimensions[A]`: lista de dimensiones; un vector plano tiene una dimensión. |
+| Aritmética | `A+B`, `A-B`, `-A`, `c*A`, `A/c`; suma/resta con dimensiones iguales y divisor escalar no nulo. |
+| Producto | `Dot[A,B]` o `A.B`; admite cadenas y contracciones matriz-vector/vector-matriz. |
+| Transpuesta y traza | `Transpose[A]`, `Tr[A]`; la transpuesta no conjuga. |
+| Determinante e inversa | `Det[A]`, `Inverse[A]`; matriz cuadrada, inversa condicionada a determinante no nulo. |
+| Rango | `MatrixRank[A]`; cuando depende de parámetros devuelve una rama condicionada, sin declararla universal. |
+| Sistemas | `LinearSolve[A,b]` resuelve `A x=b`; admite varios segundos miembros como matriz. |
+| Espectro | `Eigenvalues[A]`, `Eigenvectors[A]`; véanse las convenciones siguientes. |
+| Potencia | `MatrixPower[A,n]` o `A^n`, con entero entre -32 y 32; exponente negativo requiere inversa. |
+| Exponencial | `MatrixExp[A]`, incluyendo matrices no diagonalizables. |
+
+`A*B` conserva el producto matricial histórico entre matrices; no significa
+producto elemento a elemento. Para expresar el producto de forma explícita se
+recomienda `Dot` o `.`. Entre vectores planos use `Dot`; `*` entre dos vectores
+se rechaza por ambiguo. La contracción es bilineal: no conjuga componentes
+complejas. El punto tiene precedencia mayor que `*` y menor que `^`;
+`1.25` sigue siendo un único decimal. Los vectores resultado pueden sumarse,
+restarse y escalarse, preservando su forma de lista.
+
+```wolfram
+Dot[{{1,2},{3,4}},{{5,6},{7,8}}]
+Det[{{1,2},{3,4}}]
+LinearSolve[{{2,0},{0,3}},{4,9}]
+MatrixExp[{{0,1},{0,0}}]
+```
+
+Estos ejemplos dan, respectivamente, una matriz con filas `{19,22}` y `{43,50}`,
+`-2`, `{2,3}` y una matriz con filas `{1,1}` y `{0,1}`.
+
+Los sistemas exactos pueden devolver una solución única, una familia con
+parámetros internos independientes, o el conjunto vacío con estado `no_solution`.
+No se sustituye un sistema incompatible por mínimos cuadrados. Las matrices
+rectangulares con coeficientes paramétricos requieren especialización cuando
+no se puede decidir la rama. Las condiciones de inversa, rango y espacios
+propios son ejecutables: sobreviven a sustituciones y al guardado de sesiones.
+Una especialización excluida exige recalcular desde la matriz original.
+
+Los autovalores se ordenan mediante `default_sort_key` de SymPy, con
+multiplicidad algebraica. Los autovectores son vectores derechos no normalizados,
+agrupados por autovalor; `details.eigenvalues_for_vectors` indica el emparejamiento.
+Una matriz defectuosa devuelve sólo los vectores independientes disponibles y
+`basis_complete=false`, sin rellenar con vectores nulos. Las diagonales simbólicas
+conservan una base universal; sus multiplicidades pueden requerir especialización.
+El cálculo decimal espectral usa los racionales binarios almacenados y evalúa
+el resultado después; no modela la incertidumbre de los datos ni certifica dígitos.
+
+Los sistemas aproximados registran residuos y, cuando procede, una estimación
+del condicionamiento. Los autovectores aproximados incluyen comprobaciones
+de residuo y avisos de bases mal condicionadas. El rango numérico no usa una
+tolerancia configurable: un pivote muy pequeño puede contar como no nulo.
+Aumentar la precisión no recupera información perdida en datos aproximados.
+
+Alcance: álgebra densa de hasta ocho filas/columnas y 64 entradas, entrada de
+256 operaciones simbólicas y salida de 4096 operaciones/64 entradas. Las
+operaciones espectrales admiten hasta 4×4 y ocho símbolos; para orden cuatro
+con parámetros o entradas aproximadas se requiere forma triangular. Una
+matriz simbólica densa 3×3 admite hasta tres símbolos y 64 operaciones de entrada.
+La precisión de entrada espectral se limita a 80 dígitos. Son presupuestos
+estructurales, no límites duros de tiempo o memoria. No hay matrices dispersas
+ni bibliotecas numéricas nativas adicionales en esta etapa.
 
 ## Cálculo y reglas: desarrollo 0.2.0.dev3
 

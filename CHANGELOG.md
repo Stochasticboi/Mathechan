@@ -1,5 +1,38 @@
 # Versiones / Releases
 
+## 0.2.0.dev4 — Sin publicar / Unreleased
+
+### Español
+
+- Álgebra lineal densa: `Dimensions`, `Dot` y `A.B`, `Transpose`, `Tr`, `Det`,
+  `Inverse`, `MatrixRank`, `LinearSolve`, `Eigenvalues`, `Eigenvectors`,
+  `MatrixPower` y `MatrixExp`. Suma, resta, escalado y producto matricial
+  conservan el comportamiento previo de `Matrix`; los vectores resultado
+  admiten composición aritmética.
+- `N` aproxima matrices y listas numéricas. Los sistemas distinguen soluciones
+  únicas, familias y ausencia de soluciones; las ramas paramétricas retienen
+  requisitos ejecutables. Las matrices defectuosas no se rellenan con vectores nulos.
+- Diagnósticos de residuo y condicionamiento para cálculos aproximados, sin
+  certificar dígitos. El impresor ofrece entrada reutilizable para matrices
+  exactas representables. Doce nuevos casos de aceptación del ejecutable.
+- Se mantienen los límites documentados de tamaño y complejidad. Sin nuevas
+  dependencias ni cambios en el descargable 0.2.0-dev0.
+
+### English
+
+- Dense linear algebra: `Dimensions`, `Dot` and `A.B`, `Transpose`, `Tr`, `Det`,
+  `Inverse`, `MatrixRank`, `LinearSolve`, `Eigenvalues`, `Eigenvectors`,
+  `MatrixPower`, and `MatrixExp`. Addition, subtraction, scaling, and historical
+  `Matrix` multiplication remain available; vector results support arithmetic composition.
+- `N` approximates numerical matrices and lists. Linear systems distinguish
+  unique solutions, families, and no solution; parametric branches retain
+  executable requirements. Defective matrices never receive zero eigenvector padding.
+- Residual and condition diagnostics for approximate computations without
+  certified digits. Representable exact matrices receive reusable input.
+  Twelve additional executable acceptance cases.
+- Documented size and complexity budgets remain in force. No new dependencies
+  or changes to the published 0.2.0-dev0 download.
+
 ## 0.2.0.dev3 — Sin publicar / Unreleased
 
 ### Español

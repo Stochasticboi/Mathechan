@@ -57,6 +57,9 @@ def _write(expression, depth):
     write = lambda item: _write(item, depth + 1)
     if isinstance(expression, sp.Equality):
         result = f"({write(expression.lhs)})==({write(expression.rhs)})"
+    elif isinstance(expression, sp.MatrixBase):
+        result = "Matrix[{" + ",".join("{" + ",".join(write(item) for item in expression.row(row)) + "}"
+                                      for row in range(expression.rows)) + "}]"
     elif isinstance(expression, sp.Tuple):
         result = "{" + ",".join(write(item) for item in expression) + "}"
     elif isinstance(expression, sp.Add):
