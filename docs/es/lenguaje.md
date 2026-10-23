@@ -97,6 +97,8 @@ Estos ejemplos dan, respectivamente, una matriz con filas `{19,22}` y `{43,50}`,
 
 Los sistemas exactos pueden devolver una solución única, una familia con
 parámetros internos independientes, o el conjunto vacío con estado `no_solution`.
+Si la matriz es constante y la compatibilidad depende del segundo miembro,
+se conservan ecuaciones como `b==0` junto con la solución condicionada.
 No se sustituye un sistema incompatible por mínimos cuadrados. Las matrices
 rectangulares con coeficientes paramétricos requieren especialización cuando
 no se puede decidir la rama. Las condiciones de inversa, rango y espacios

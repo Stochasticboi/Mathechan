@@ -70,6 +70,21 @@ class MatrixLanguageTests(unittest.TestCase):
         self.assertRaises(MathechanError, evaluate, "(Matrix[{{x}}]/x)/.x->0")
         self.assertRaises(MathechanError, evaluate, "Tr[Inverse[{{x,0},{0,1}}]]/.x->0")
 
+    def test_parametric_compatibility_is_preserved_with_solution_family(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
+            s = Session()
+            result = s.evaluate("u=LinearSolve[{{1,0},{0,0}},{1,b}]")
+            self.assertEqual(result.status, "conditional")
+            self.assertTrue(result.conditions)
+            s.evaluate("u/.b->0")
+            self.assertRaises(MathechanError, s.evaluate, "u/.b->1")
+            path = Path(directory)/"family.json"
+            s.save(path)
+            with patch("mathechan.kernel.build", side_effect=AssertionError("source executed on load")):
+                loaded = Session.load(path)
+            loaded.evaluate("u/.b->0")
+            self.assertRaises(MathechanError, loaded.evaluate, "u/.b->1")
+
     def test_numerical_matrices_preserve_precision_and_solve_residual(self):
         a = value("N[Matrix[{{1,1/2},{1/3,1/4}}],50]")
         self.assertTrue(a.atoms(sp.Float))

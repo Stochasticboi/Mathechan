@@ -93,7 +93,9 @@ The results are respectively a matrix with rows `{19,22}` and `{43,50}`, `-2`,
 `{2,3}`, and a matrix with rows `{1,1}` and `{0,1}`.
 
 Exact systems distinguish unique solutions, families with independent internal
-parameters, and the empty set with `no_solution` status. Inconsistent systems
+parameters, and the empty set with `no_solution` status. For a constant
+coefficient matrix, compatibility equations such as `b==0` are retained with
+the conditional solution when needed. Inconsistent systems
 are never silently replaced by least squares. Rectangular parametric systems
 require specialization when their branch cannot be determined. Inverse, rank
 and eigenspace requirements are executable and survive replacement and session

@@ -192,6 +192,42 @@ class LinearAlgebraTests(unittest.TestCase):
         self.assertEqual(result.value, 1)
         self.assertEqual(requirements, ())
 
+    def test_degenerate_rhs_parameters_do_not_imply_universal_inconsistency(self):
+        b = sp.Symbol("b")
+        for matrix, rhs in [(sp.diag(1, 0), sp.Tuple(1, b)),
+                            (sp.zeros(1, 1), sp.Tuple(b))]:
+            with self.subTest(matrix=matrix):
+                conditional, requirements = self.op("LinearSolve", matrix, rhs)
+                self.assertEqual(conditional.status, "conditional")
+                self.assertEqual(requirements, (sp.Eq(b, 0),))
+                self.assertEqual(matrix*sp.Matrix(conditional.value), sp.Matrix(rhs.subs(b, 0)))
+            result, _ = self.op("LinearSolve", matrix, rhs.subs(b, 0))
+            self.assertEqual(result.details["solution_type"], "family")
+        result, _ = self.op("LinearSolve", sp.diag(1, 0), sp.Tuple(b, 0))
+        self.assertEqual(result.details["solution_type"], "family")
+        self.assertEqual(sp.diag(1, 0)*sp.Matrix(result.value), sp.Matrix([b, 0]))
+
+    def test_rectangular_parametric_rhs_has_conditional_unique_solution(self):
+        b = sp.Symbol("b")
+        matrix = sp.ImmutableMatrix([[1], [2]])
+        result, requirements = self.op("LinearSolve", matrix, sp.Tuple(3, b))
+        self.assertEqual(result.value.subs(b, 6), sp.Tuple(3))
+        self.assertEqual(result.status, "conditional")
+        self.assertEqual(result.details["solution_type"], "unique")
+        self.assertIs(requirements[0].subs(b, 6), sp.true)
+        self.assertIs(requirements[0].subs(b, 7), sp.false)
+
+    def test_parametric_rhs_multiple_columns_preserves_compatibility(self):
+        b = sp.Symbol("b")
+        matrix = sp.ImmutableMatrix([[1, 0], [0, 0]])
+        rhs = sp.ImmutableMatrix([[2, b], [b, sp.sin(b)]])
+        result, requirements = self.op("LinearSolve", matrix, rhs)
+        self.assertEqual(result.details["solution_type"], "family")
+        self.assertEqual(len(result.details["free_parameters"]), 2)
+        self.assertTrue(all(condition.subs(b, 0) is sp.true for condition in requirements))
+        self.assertTrue(any(condition.subs(b, 1) is sp.false for condition in requirements))
+        self.assertEqual((matrix*result.value-rhs).subs(b, 0), sp.zeros(2))
+
 
 if __name__ == "__main__":
     unittest.main()

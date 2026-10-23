@@ -206,6 +206,37 @@ def matrix_operation(name, args, assumptions=sp.true):
                 raise ValueError("LinearSolve rectangular con coeficientes paramétricos requiere especializar los parámetros.")
             rank = matrix.rank()
             if matrix.row_join(rhs).rank() != rank:
+                if rhs.free_symbols:
+                    reduced, _ = matrix.row_join(sp.eye(matrix.rows)).rref()
+                    row_form = reduced[:, :matrix.cols]
+                    transformed_rhs = reduced[:, matrix.cols:] * rhs
+                    conditions = [sp.Eq(sp.simplify(transformed_rhs[i, j]), 0)
+                                  for i in range(rank, matrix.rows) for j in range(rhs.cols)]
+                    if sp.simplify(sp.And(*conditions)) is sp.false:
+                        outcome, conditions = _result(sp.EmptySet, name, solution_type="none")
+                        return replace(outcome, status="no_solution"), conditions
+                    requirements = tuple(dict.fromkeys(
+                        condition for condition in conditions if condition is not sp.true))
+                    _, pivots = matrix.rref()
+                    free_columns = [column for column in range(matrix.cols) if column not in pivots]
+                    value = sp.MutableDenseMatrix.zeros(matrix.cols, rhs.cols)
+                    free = []
+                    for column in range(rhs.cols):
+                        for free_column in free_columns:
+                            parameter = sp.Dummy(f"parameter{len(free)+1}")
+                            free.append(parameter)
+                            value[free_column, column] = parameter
+                        for row, pivot in enumerate(pivots):
+                            value[pivot, column] = transformed_rhs[row, column] - sum(
+                                row_form[row, free_column]*value[free_column, column]
+                                for free_column in free_columns)
+                    details["solution_type"] = "family" if free else "unique"
+                    if free:
+                        details["free_parameters"] = [sp.sstr(item) for item in free]
+                        warnings.append("Familia de soluciones: los parámetros libres son escalares complejos arbitrarios.")
+                    warnings.append("La solución existe bajo las condiciones de compatibilidad indicadas.")
+                    value = sp.Tuple(*value) if rhs_vector else sp.ImmutableMatrix(value)
+                    return _result(value, name, requirements, warnings, **details)
                 outcome, conditions = _result(sp.EmptySet, name, solution_type="none")
                 return replace(outcome, status="no_solution"), conditions
             value, parameters = matrix.gauss_jordan_solve(rhs)
