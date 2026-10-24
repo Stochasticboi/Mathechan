@@ -482,6 +482,8 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
             kind = "matrix"
         elif isinstance(expression, HeldExpression):
             kind = "held"
+        elif expression.func.__name__ == "FiniteDistribution":
+            kind = "distribution"
         elif expression.func.__name__ == "RuleValue":
             kind = "rule"
         elif isinstance(expression, sp.core.relational.Relational) and kind == "expression":

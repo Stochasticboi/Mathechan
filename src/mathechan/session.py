@@ -76,6 +76,9 @@ class Session:
                        (capture.get("restrictions") or capture.get("requirements")))
         def supported(item):
             from .replacement import RuleValue
+            from .finite_probability import FiniteDistribution
+            if isinstance(item, FiniteDistribution):
+                return all(supported(child) for child in item.args)
             if isinstance(item, RuleValue):
                 return True
             if isinstance(item, HeldExpression):
