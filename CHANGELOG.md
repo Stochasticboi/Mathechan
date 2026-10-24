@@ -1,5 +1,37 @@
 # Versiones / Releases
 
+## 0.2.0.dev5 — Sin publicar / Unreleased
+
+### Español
+
+- Inicio de probabilidad discreta finita: `FiniteDistribution`,
+  `WeightedDistribution`, `BernoulliDistribution` y `DiscreteUniformDistribution`.
+  Validación de estados reales distintos, masas y normalización; soporte de
+  parámetros con requisitos ejecutables, sin renormalización implícita.
+- `States`, `Support`, `Probabilities`, `Mean`, `Variance`, `StandardDeviation`,
+  `Entropy`, `Probability` y `Expectation`. Variables locales, estados de masa
+  cero omitidos antes de evaluar observables y entropía en nats sin `0 Log[0]`.
+- Distribuciones guardables sin ejecutar fuente al cargar. Sustitución de
+  resultados por casos corregida para seleccionar condiciones antes de ramas;
+  corregida una falsa contradicción de pertenencias racionales a los reales.
+- Ocho casos nuevos de aceptación del ejecutable. Documentación ES/EN existente
+  actualizada. Sin nuevas dependencias ni cambios en la release 0.2.0-dev0.
+
+### English
+
+- Initial finite discrete probability: `FiniteDistribution`,
+  `WeightedDistribution`, `BernoulliDistribution`, and `DiscreteUniformDistribution`.
+  Distinct real states, masses, and normalization are validated; symbolic
+  requirements remain executable, with no implicit normalization.
+- `States`, `Support`, `Probabilities`, `Mean`, `Variance`, `StandardDeviation`,
+  `Entropy`, `Probability`, and `Expectation`. Local variables, zero-mass states
+  skipped before observable evaluation, and zero-safe entropy in nats.
+- Distributions survive storage without executing source on load. Piecewise
+  replacement now selects conditions before branches; fixed a false
+  contradiction involving rational-expression membership in the reals.
+- Eight new executable acceptance cases and updated existing bilingual docs.
+  No additional dependencies or changes to the published 0.2.0-dev0 release.
+
 ## 0.2.0.dev4 — Sin publicar / Unreleased
 
 ### Español

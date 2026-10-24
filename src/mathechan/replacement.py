@@ -140,6 +140,16 @@ def replacement_call(node, build, restrictions, state, bindings, functions, defi
             return right.xreplace(mapping)
         if isinstance(value, sp.ImmutableMatrix):
             return value.applyfunc(lambda item: transform(item, depth + 1))
+        if isinstance(value, sp.Piecewise):
+            branches = []
+            for expression, condition in value.args:
+                condition = sp.simplify(transform(condition, depth + 1))
+                if condition is sp.false:
+                    continue
+                branches.append((transform(expression, depth + 1), condition))
+                if condition is sp.true:
+                    break
+            return sp.Piecewise(*branches)
         if not value.args:
             return value
         args = tuple(transform(item, depth + 1) for item in value.args)

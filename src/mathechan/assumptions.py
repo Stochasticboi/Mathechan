@@ -49,7 +49,8 @@ def validate_assumptions(condition):
     except NotImplementedError:
         pass
     expanded = condition.replace(
-        lambda item: isinstance(item, sp.Contains) and isinstance(item.args[1], sp.Interval),
+        lambda item: (isinstance(item, sp.Contains) and isinstance(item.args[1], sp.Interval)
+                      and item.args[1] != sp.S.Reals),
         lambda item: item.args[1].as_relational(item.args[0]),
     )
     parts = sp.And.make_args(expanded)

@@ -52,6 +52,14 @@ SCIENTIFIC_CASES = (
     ("matrix-eigenvectors", "Eigenvectors[{{1,0},{0,2}}]"),
     ("matrix-power", "MatrixPower[{{1,1},{0,1}},3]"),
     ("matrix-exponential", "MatrixExp[{{0,1},{0,0}}]"),
+    ("finite-mean", "Mean[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]"),
+    ("finite-variance", "Variance[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]"),
+    ("finite-entropy", "Entropy[FiniteDistribution[{0,1},{1/2,1/2}]]"),
+    ("finite-event", "Probability[x>=1,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]"),
+    ("finite-expectation", "Expectation[x^2,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]"),
+    ("weighted-mean", "Mean[WeightedDistribution[{0,2},{1,3}]]"),
+    ("bernoulli-variance", "Variance[BernoulliDistribution[1/4]]"),
+    ("discrete-uniform-mean", "Mean[DiscreteUniformDistribution[{1,6}]]"),
 )
 
 CURVILINEAR_REFERENCES = {
@@ -64,6 +72,14 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "Mean[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": ("expression", "1"),
+    "Variance[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": ("expression", "1/2"),
+    "Entropy[FiniteDistribution[{0,1},{1/2,1/2}]]": ("expression", "log(2)"),
+    "Probability[x>=1,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]": ("expression", "3/4"),
+    "Expectation[x^2,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]": ("expression", "3/2"),
+    "Mean[WeightedDistribution[{0,2},{1,3}]]": ("expression", "3/2"),
+    "Variance[BernoulliDistribution[1/4]]": ("expression", "3/16"),
+    "Mean[DiscreteUniformDistribution[{1,6}]]": ("expression", "7/2"),
     "Dimensions[{{1,2},{3,4}}]": ("list", "{2,2}"),
     "{{1,2},{3,4}}.{{5,6},{7,8}}": ("matrix", "Matrix([\n[19, 22],\n[43, 50]])"),
     "Transpose[{{1,2},{3,4}}]": ("matrix", "Matrix([\n[1, 3],\n[2, 4]])"),

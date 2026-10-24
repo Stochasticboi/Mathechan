@@ -2,10 +2,10 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev4**. La descarga publicada
+Este documento describe el código **0.2.0.dev5**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
-de dev3 ni el álgebra lineal de dev4. Las subsecciones
+de dev3, el álgebra lineal de dev4 ni la probabilidad finita de dev5. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -55,6 +55,68 @@ contexto acotado de `DSolve`; no habilita definiciones arbitrarias. Los símbolo
 reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
+
+## Probabilidad discreta finita: desarrollo 0.2.0.dev5
+
+Este incremento inicia la etapa de probabilidad; no incorpora todavía toda la
+estadística matemática. Una distribución es un objeto inmutable, con estados
+escalares reales finitos distintos y una masa de probabilidad por estado.
+
+| Operación | Sintaxis y significado |
+|---|---|
+| Masas normalizadas | `FiniteDistribution[{estados},{masas}]`: exige masas reales entre 0 y 1 cuya suma sea exactamente 1. No renormaliza. |
+| Pesos | `WeightedDistribution[{estados},{pesos}]`: pesos reales no negativos, suma positiva; normalización explícita. |
+| Bernoulli | `BernoulliDistribution[p]`: estados `{0,1}`, masas `{1-p,p}` y condición `0<=p<=1`. |
+| Uniforme discreta | `DiscreteUniformDistribution[{a,b}]`: enteros consecutivos entre extremos enteros exactos inclusivos. |
+| Inspección | `States[d]` y `Probabilities[d]`: listas alineadas, incluidas las masas cero. |
+| Soporte efectivo | `Support[d]`: estados de masa positiva; si no puede decidir qué masas son cero, solicita especializar los parámetros. |
+| Momentos | `Mean[d]`, `Variance[d]`, `StandardDeviation[d]`; varianza poblacional de la distribución. |
+| Entropía | `Entropy[d]`: Shannon en nats, con logaritmo natural y convención `0 Log[0]=0`. |
+| Evento | `Probability[evento,{x,d}]`: probabilidad de un evento lógico. |
+| Observable | `Expectation[expresión,{x,d}]`: suma finita ponderada del observable, que puede ser complejo. |
+
+En una sesión se puede evaluar, una línea por vez:
+
+```wolfram
+d=FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]
+Mean[d]
+Variance[d]
+Expectation[x^2,{x,d}]
+Probability[x>=1,{x,d}]
+Entropy[d]
+```
+
+Los resultados son `1`, `1/2`, `3/2`, `3/4` y `3 Log[2]/2`, respectivamente.
+La variable `x` es local: oculta su definición exterior durante el cálculo y
+no modifica la sesión. Un evento escalar como `Probability[a,{x,d}]` se rechaza.
+Eventos con parámetros indecididos conservan una expresión por casos, sin elegir
+una rama arbitrariamente; las comparaciones de orden exigen operandos reales.
+
+Las hipótesis de realidad, no negatividad, distinción de estados y normalización
+son requisitos ejecutables. Acompañan incluso a resultados constantes y se
+comprueban tras sustituciones. Las distribuciones y sus condiciones se guardan
+en JSON validado; cargar no ejecuta expresiones de entrada. La forma canónica
+`FiniteDistribution[...]` no conserva por sí sola las restricciones originales
+de los pesos: deben mantenerse junto con las condiciones del resultado.
+
+Los estados de masa demostrablemente cero se omiten antes de evaluar un evento
+u observable: un valor indefinido sólo en esos estados no causa un error. Si la
+masa es simbólica y no se demuestra que sea cero, una singularidad se rechaza
+conservadoramente. La entropía mantiene sus ramas de masa cero también después
+de sustituir parámetros y guardar la sesión.
+
+Alcance: una variable, entre 1 y 64 estados, ocho símbolos y 256 operaciones de
+entrada; resultado de hasta 4096 operaciones. Las operaciones ligadas comparten
+el presupuesto de 2000 términos. Estos límites no son un timeout ni una cota de
+memoria. `N[Mean[d],p]` y `N[Probabilities[d],p]` ofrecen aproximaciones; `N[d]`
+no crea una distribución aproximada. Las masas Float se validan según su suma
+binaria almacenada exacta, sin tolerancia oculta. Para pesos Float, la normalización
+usa sus racionales binarios exactos y advierte que la incertidumbre no se certifica.
+Véanse las [convenciones de distribuciones discretas](https://www.itl.nist.gov/div898/handbook/eda/section3/eda361.htm).
+
+Quedan para incrementos posteriores las distribuciones conjuntas, marginales y
+condicionales, covarianza/correlación, generatrices, binomial y distribuciones
+continuas. No se añaden muestreo aleatorio, inferencia MaxEnt ni simulaciones.
 
 ## Álgebra lineal: desarrollo 0.2.0.dev4
 

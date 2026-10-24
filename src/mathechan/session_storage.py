@@ -114,6 +114,10 @@ class Codec:
 
     def encode(self, value, depth=0):
         self.tick(depth)
+        from .finite_probability import FiniteDistribution
+        if isinstance(value, FiniteDistribution):
+            return {"type": "finite_distribution", "states": self.encode(value.states, depth + 1),
+                    "probabilities": self.encode(value.probabilities, depth + 1)}
         from .replacement import RuleValue
         if isinstance(value, RuleValue):
             left, right, patterns, excluded, required, delayed = value.args
@@ -167,6 +171,12 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "finite_distribution":
+            from .finite_probability import FiniteDistribution
+            _keys(data, ("type", "states", "probabilities"))
+            states = self.decode(data["states"], depth + 1)
+            probabilities = self.decode(data["probabilities"], depth + 1)
+            return FiniteDistribution(states, probabilities)
         if kind == "wild":
             _keys(data, ("type", "name"))
             return sp.Wild(_name(data["name"]))

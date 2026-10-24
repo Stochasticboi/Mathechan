@@ -25,7 +25,7 @@ Las descargas anteriores conservan su alcance original.
 
 ## Desarrollo posterior
 
-El código en desarrollo **0.2.0.dev4** incorpora límites, series, productos,
+El código en desarrollo **0.2.0.dev5** incorpora límites, series, productos,
 derivadas mixtas, cálculo vectorial cartesiano, cilíndrico y esférico e integrales iteradas.
 La sustitución admite `expr /. x -> valor`, listas de reglas y reglas diferidas.
 Los operadores curvilíneos usan componentes ortonormales y conservan las
@@ -34,6 +34,9 @@ gradiente vectorial geométrico.
 Incluye álgebra lineal densa: operaciones con matrices, `Dot`/`A.B`,
 determinantes, inversas, rango, sistemas lineales, autovalores, autovectores,
 potencias y exponencial matricial. `N` admite matrices y listas numéricas.
+Inicia probabilidad discreta finita: distribuciones y pesos normalizados,
+Bernoulli, uniforme discreta, probabilidad de eventos, esperanza, varianza,
+desviación estándar y entropía, con condiciones conservadas en sesión.
 Estos incrementos no están en el descargable 0.2.0-dev0. Véase el
 [lenguaje](docs/es/lenguaje.md) para el alcance y sus restricciones.
 

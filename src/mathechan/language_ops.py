@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 import sympy as sp
 
 from .matrix_language import LINEAR_CALLS
+from .probability_language import PROBABILITY_CALLS
 
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = LINEAR_CALLS | frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | frozenset(
     {
         "N",
         "If",
@@ -326,6 +327,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in PROBABILITY_CALLS:
+        from .probability_language import probability_call
+        return probability_call(node, build, restrictions, state, bindings, functions, definitions)
     if name in LINEAR_CALLS:
         from .matrix_language import matrix_call
         return matrix_call(node, build, restrictions, state, bindings, functions, definitions)
