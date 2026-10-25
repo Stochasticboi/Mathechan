@@ -25,6 +25,13 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "Imag^2": {"kind": "expression", "text": "-1"},
+        "Inner[{1,Imag},{1,Imag}]": {"kind": "expression", "text": "2"},
+        "Kron[{0,1},{1,0}]": {"kind": "list", "text": "{0,0,1,0}"},
+        "PTrace[Proj[{1,0,0,1}],{2,2},2]": {"kind": "matrix", "text": "Matrix([\n[1/2,   0],\n[  0, 1/2]])"},
+        "HermQ[{{0,-Imag},{Imag,0}}]": {"kind": "logical", "text": "True"},
+        "UnitaryQ[{{0,-Imag},{Imag,0}}]": {"kind": "logical", "text": "True"},
+        "PSDCheck[Proj[{1,Imag}]]": {"kind": "logical", "text": "True"},
         "D[Sinh[x],x]": {"kind":"expression", "text":"cosh(x)"},
         "D[Tanh[x],x]": {"kind":"expression", "text":"1 - tanh(x)**2", "conditions":["(Cosh[x]) != 0"]},
         "Integrate[Sech[x],x]": {"kind":"expression", "text":"2*atan(tanh(x/2))", "details":{"verification":"verified","residual":"0"}},
@@ -150,7 +157,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 54)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 61)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -264,8 +271,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 58)
-            self.assertEqual(runner.call_count, 58)
+            self.assertEqual(len(checks), 65)
+            self.assertEqual(runner.call_count, 65)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

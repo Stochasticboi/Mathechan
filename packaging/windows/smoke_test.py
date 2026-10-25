@@ -16,6 +16,13 @@ class SmokeTestError(RuntimeError):
 
 
 SCIENTIFIC_CASES = (
+    ("imaginary-literal", "Imag^2"),
+    ("hermitian-inner", "Inner[{1,Imag},{1,Imag}]"),
+    ("tensor-order", "Kron[{0,1},{1,0}]"),
+    ("bell-reduced-state", "PTrace[Proj[{1,0,0,1}],{2,2},2]"),
+    ("pauli-hermitian", "HermQ[{{0,-Imag},{Imag,0}}]"),
+    ("pauli-unitary", "UnitaryQ[{{0,-Imag},{Imag,0}}]"),
+    ("projector-psd", "PSDCheck[Proj[{1,Imag}]]"),
     ("numeric-precision", "N[Pi,30]"),
     ("factor", "Factor[x^2-1]"),
     ("together", "Together[1/x+1/y]"),
@@ -82,6 +89,13 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "Imag^2": ("expression", "-1"),
+    "Inner[{1,Imag},{1,Imag}]": ("expression", "2"),
+    "Kron[{0,1},{1,0}]": ("list", "{0,0,1,0}"),
+    "PTrace[Proj[{1,0,0,1}],{2,2},2]": ("matrix", "Matrix([\n[1/2,   0],\n[  0, 1/2]])"),
+    "HermQ[{{0,-Imag},{Imag,0}}]": ("logical", "True"),
+    "UnitaryQ[{{0,-Imag},{Imag,0}}]": ("logical", "True"),
+    "PSDCheck[Proj[{1,Imag}]]": ("logical", "True"),
     "D[Sinh[x],x]": ("expression", "cosh(x)"),
     "D[Tanh[x],x]": ("expression", "1 - tanh(x)**2"),
     "Integrate[Sech[x],x]": ("expression", "2*atan(tanh(x/2))"),

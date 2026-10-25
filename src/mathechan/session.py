@@ -17,7 +17,7 @@ SESSION_COMMANDS = frozenset({
     "SetDelayed", "DefineDelayed", "DefinePattern",
 })
 PROTECTED_NAMES = frozenset(FUNCTIONS) | SCIENTIFIC_CALLS | SESSION_COMMANDS | ASSUMPTION_CALLS | SEMANTIC_CALLS | {
-    "Pi", "E", "Infinity", "Plot", "Reals", "Complexes", "Integers", "True", "False",
+    "Pi", "E", "Imag", "Infinity", "Plot", "Reals", "Complexes", "Integers", "True", "False",
     "If", "IntegerPattern", "RealPattern", "ScalarPattern",
 }
 ASSIGNABLE_STATUSES = frozenset({"evaluated", "approximate", "verified", "solved", "series"})
@@ -75,11 +75,16 @@ class Session:
         conditional = (result.status == "conditional" and
                        (capture.get("restrictions") or capture.get("requirements")))
         def supported(item):
+            from sympy.assumptions.assume import AppliedPredicate
+            from sympy.logic.boolalg import BooleanFunction
             from .replacement import RuleValue
             from .finite_probability import FiniteDistribution
             from .joint_probability import JointFiniteDistribution
             if isinstance(item, (FiniteDistribution, JointFiniteDistribution)):
                 return all(supported(child) for child in item.args)
+            if (item is sp.true or item is sp.false or
+                    isinstance(item, (BooleanFunction, AppliedPredicate, sp.Contains))):
+                return not item.has(sp.zoo, sp.nan, sp.oo, -sp.oo)
             if isinstance(item, RuleValue):
                 return True
             if isinstance(item, HeldExpression):

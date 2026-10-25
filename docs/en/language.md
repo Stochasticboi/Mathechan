@@ -2,10 +2,10 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev7 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev8 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
 calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
-dev5–dev6 finite probability, or dev7 hyperbolic functions. Historical 0.1.1 sections record the scope
+dev5–dev6 finite probability, dev7 hyperbolic functions, or dev8 complex operations. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -20,7 +20,7 @@ There is no graphical interface or visual notebook editor yet.
 |---|---|
 | Integers and decimals | Exact: `0.1+0.2` produces `3/10` |
 | Symbols | ASCII letters followed by letters or digits; case-sensitive |
-| Constants | `Pi`, `E`; `Infinity` in ranges, limits and series |
+| Constants | `Pi`, `E`, `Imag`; `Infinity` in ranges, limits and series |
 | Operators | `+`, `-`, `*`, `/`, `^`; multiplication must be explicit |
 | Grouping | Parentheses: `(x+1)^2` |
 | Single-argument functions | `Sin`, `Cos`, `Exp`, `Log`, `Sqrt`, `Expand`, `Simplify` |
@@ -37,9 +37,10 @@ The additive `input` field contains verified reusable input when the result fits
 the supported subset and current limits; otherwise it is JSON `null` or Python
 `None`. The existing `text` representation is unchanged.
 
-`I` remains a generic symbol. The imaginary constant from `Sqrt[-1]` also has
-`text: "I"`, but its `input` is `Sqrt[-1]`; the generic symbol has `input: "I"`.
-Mathematical constants use `Pi` and `E`. Reuse `input` rather than automatically
+`Imag` is the imaginary constant, equivalent to `Sqrt[-1]`. `I` remains a
+generic symbol. The imaginary constant has `text: "I"`, but its canonical
+`input` is `Sqrt[-1]`, even when entered as `Imag`; the generic symbol has
+`input: "I"`. Other mathematical constants use `Pi` and `E`. Reuse `input` rather than automatically
 copying `text`.
 
 The printer covers integers, rationals, supported symbols, sums, products,
@@ -55,6 +56,77 @@ the bounded `DSolve` context, not as arbitrary definitions. Symbols are not
 automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
+
+## Complex states and operators: development 0.2.0.dev8
+
+Flat lists and column matrices represent kets in these operations. A row
+matrix retains its orientation: use `Adj[v]` to form the bra. Symbols remain
+generic complex quantities unless explicitly constrained by assumptions.
+
+| Operation | Meaning and example |
+|---|---|
+| `Conj` | Elementwise conjugation: `Conj[{1,Imag}]` returns `{1,-Imag}`. |
+| `Re` | Real part of a scalar, vector or matrix: `Re[1+Imag]` returns `1`. |
+| `Im` | Elementwise imaginary part: `Im[1+Imag]` returns `1`. |
+| `Adj` | Conjugate transpose: `Adj[{1,Imag}]` is the row matrix `{{1,-Imag}}`. |
+| `Inner` | Hermitian product: `Inner[{1,Imag},{1,Imag}]` returns `2`. Conjugates the first argument. |
+| `Norm` | Complex Euclidean norm: `Norm[{3,4*Imag}]` returns `5`. |
+| `Unit` | Normalizes a ket: `Unit[{3,4*Imag}]` returns `{3/5,4*Imag/5}`. |
+| `Dyad` | `Dyad[u,v]` forms `u v†`, without normalization. |
+| `Proj` | `Proj[v]` forms `v v† / Inner[v,v]`, the normalized projector. |
+| `Kron` | Tensor product of two to eight factors: `Kron[{1,0},{0,1}]` returns `{0,1,0,0}`. |
+| `Ortho` | Ordered Hermitian Gram–Schmidt: `Ortho[{{1,Imag},{1,0}}]`. Rejects zero or dependent vectors. |
+| `HermQ` | Checks `A†=A`: `HermQ[{{0,-Imag},{Imag,0}}]` returns `True`. |
+| `UnitaryQ` | Checks `A† A=Identity`: `UnitaryQ[{{0,1},{1,0}}]` returns `True`. |
+| `PSDCheck` | Checks Hermitian positive semidefiniteness, including zero eigenvalues: `PSDCheck[{{1,0},{0,0}}]` returns `True`. |
+| `PTrace` | `PTrace[rho,{d1,d2,...},{subsystems}]` traces out selected subsystems, indexed from one. |
+
+`Dot` and `.` retain their bilinear product: they do not conjugate implicitly.
+For example, `Dot[{1,Imag},{1,Imag}]` returns `0`, while `Inner` returns `2`.
+`Dyad[v,v]` equals `Proj[v]` when `v` is normalized. `Unit` and `Proj` require
+strictly positive norm; `Ortho` requires it for every residual. These
+requirements survive cancellation, assignment and session save/load.
+`Proj[{z}]` may simplify to `{{1}}` while still excluding `z=0`.
+
+Session example: a Bell state and the reduced state of its first qubit.
+Lines are consecutive inputs; each result can be inspected.
+
+```wolfram
+bell=Unit[Kron[{1,0},{1,0}]+Kron[{0,1},{0,1}]]
+rho=Proj[bell]
+Inner[bell,bell]
+PSDCheck[rho]
+PTrace[rho,{2,2},{2}]
+```
+
+The last three results are `1`, `True` and `Matrix[{{1/2,0},{0,1/2}}]`.
+`Kron` makes the first factor the most significant subsystem: the two-qubit
+basis is ordered `00`, `01`, `10`, `11`. `PTrace` uses the same convention;
+an empty list traces out none, and tracing all returns the scalar `Tr[rho]`.
+
+Predicates return `True`, `False` or a symbolic boolean formula when undecided.
+An undecided formula is not treated as true. These formulas can be saved,
+loaded and specialized with `/.`; for example, `h=HermQ[{{z}}]` followed by
+`h /. z -> 2` returns `True`. `Assuming` refines recognized cases, but
+refinement of complex expressions and formulas remains partial.
+
+Limits: eight rows/columns and 64 entries; eight symbols and 256 input
+operations, up to 4096 output operations. `PSDCheck` accepts matrices up to
+4×4 and checks all principal minors, at most 15 determinants. `PTrace`
+accepts one to four subsystems and total dimension up to eight. `Kron`
+checks size before constructing its result. These structural budgets do not
+guarantee execution time or memory use.
+
+With `Float`, no absolute or relative tolerance classifies zero, Hermiticity,
+unitarity or positivity. The `HermQ`, `UnitaryQ` and `PSDCheck` predicates
+examine the stored binary values as exact rationals. Other operations,
+including `Norm` and `Unit`, use approximate SymPy arithmetic; the exception
+is `Ortho`, which performs Gram–Schmidt with those values as exact rationals
+and approximates at the end. No digits or physical uncertainty are certified.
+`Ortho` returns a list of orthonormal kets and warns when the
+squared residual norm relative to the squared input norm is below `1e-12`.
+That diagnostic describes sensitivity without dropping the vector. Additional
+computation digits cannot recover information lost in the input data.
 
 ## Hyperbolic functions: development 0.2.0.dev7
 

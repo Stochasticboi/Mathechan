@@ -25,6 +25,7 @@ CONSTRUCTORS = {
     "sin": sp.sin, "cos": sp.cos, "exp": sp.exp, "log": sp.log,
     "Abs": sp.Abs, "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,
     "gamma": sp.gamma, "Tuple": sp.Tuple,
+    "conjugate": sp.conjugate, "re": sp.re, "im": sp.im,
     "Equality": sp.Eq, "Unequality": sp.Ne, "StrictGreaterThan": sp.Gt,
     "GreaterThan": sp.Ge, "StrictLessThan": sp.Lt, "LessThan": sp.Le,
     "And": sp.And, "Or": sp.Or, "Not": sp.Not, "Contains": sp.Contains,
@@ -233,7 +234,7 @@ class Codec:
             _keys(data, ("type", "name", "id") if kind == "dummy" else ("type", "name"))
             name = _name(data["name"])
             if kind == "symbol":
-                if name in ("Pi", "E", "Infinity", "True", "False", "Reals", "Complexes", "Integers"):
+                if name in ("Pi", "E", "Imag", "Infinity", "True", "False", "Reals", "Complexes", "Integers"):
                     raise ValueError("Un símbolo ordinario no puede ocultar una constante del lenguaje.")
                 return sp.Symbol(name)
             identifier = _integer(data["id"], 0, 1024)

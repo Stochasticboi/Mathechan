@@ -6,10 +6,11 @@ import sympy as sp
 
 from .matrix_language import LINEAR_CALLS
 from .probability_language import PROBABILITY_CALLS
+from .quantum_language import QUANTUM_CALLS
 
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | frozenset(
     {
         "N",
         "If",
@@ -77,7 +78,7 @@ class EvaluationState:
 
 def variable(node):
     if node.kind != "name" or node.value in (
-        "Pi", "E", "Infinity", "Reals", "Complexes", "Integers", "True", "False"
+        "Pi", "E", "Imag", "Infinity", "Reals", "Complexes", "Integers", "True", "False"
     ):
         raise ValueError("Se requiere un símbolo como variable.")
     return sp.Symbol(node.value)
@@ -327,6 +328,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in QUANTUM_CALLS:
+        from .quantum_language import quantum_call
+        return quantum_call(node, build, restrictions, state, bindings, functions, definitions)
     if name in PROBABILITY_CALLS:
         from .probability_language import probability_call
         return probability_call(node, build, restrictions, state, bindings, functions, definitions)
