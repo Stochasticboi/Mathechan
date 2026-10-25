@@ -25,6 +25,14 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "Mean[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": {"kind":"expression", "text":"1"},
+        "Variance[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": {"kind":"expression", "text":"1/2"},
+        "Entropy[FiniteDistribution[{0,1},{1/2,1/2}]]": {"kind":"expression", "text":"log(2)"},
+        "Probability[x>=1,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]": {"kind":"expression", "text":"3/4"},
+        "Expectation[x^2,{x,FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]}]": {"kind":"expression", "text":"3/2"},
+        "Mean[WeightedDistribution[{0,2},{1,3}]]": {"kind":"expression", "text":"3/2"},
+        "Variance[BernoulliDistribution[1/4]]": {"kind":"expression", "text":"3/16"},
+        "Mean[DiscreteUniformDistribution[{1,6}]]": {"kind":"expression", "text":"7/2"},
         "Dimensions[{{1,2},{3,4}}]": {"kind": "list", "text": "{2,2}"},
         "{{1,2},{3,4}}.{{5,6},{7,8}}": {"kind": "matrix", "text": "Matrix([\n[19, 22],\n[43, 50]])"},
         "Transpose[{{1,2},{3,4}}]": {"kind": "matrix", "text": "Matrix([\n[1, 3],\n[2, 4]])"},
@@ -132,7 +140,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 36)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 44)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -210,7 +218,7 @@ class ScientificPayloadTests(unittest.TestCase):
 
 
 class ScientificSmokeTests(unittest.TestCase):
-    def test_scientific_mode_executes_thirty_six_additional_json_checks(self):
+    def test_scientific_mode_executes_all_scientific_json_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             executable = Path(directory) / "application.exe"
             executable.write_bytes(b"fixture")
@@ -246,8 +254,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 40)
-            self.assertEqual(runner.call_count, 40)
+            self.assertEqual(len(checks), 48)
+            self.assertEqual(runner.call_count, 48)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

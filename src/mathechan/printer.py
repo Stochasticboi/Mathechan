@@ -55,7 +55,10 @@ def _write(expression, depth):
     if len(expression.args) > 256:
         raise UnrepresentableExpression("Too many arguments.")
     write = lambda item: _write(item, depth + 1)
-    if isinstance(expression, sp.Equality):
+    from .finite_probability import FiniteDistribution
+    if isinstance(expression, FiniteDistribution):
+        result = "FiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"
+    elif isinstance(expression, sp.Equality):
         result = f"({write(expression.lhs)})==({write(expression.rhs)})"
     elif isinstance(expression, sp.MatrixBase):
         result = "Matrix[{" + ",".join("{" + ",".join(write(item) for item in expression.row(row)) + "}"

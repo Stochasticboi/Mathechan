@@ -2,9 +2,9 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev4 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev5 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
-calculus and replacement extensions, dev3 curvilinear charts, or dev4 linear algebra. Historical 0.1.1 sections record the scope
+calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra, or dev5 finite probability. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -54,6 +54,65 @@ the bounded `DSolve` context, not as arbitrary definitions. Symbols are not
 automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
+
+## Finite discrete probability: development 0.2.0.dev5
+
+This increment begins probability support rather than completing mathematical
+statistics. Distributions are immutable objects with distinct finite real scalar
+states and one probability mass per state.
+
+| Operation | Syntax and meaning |
+|---|---|
+| Normalized masses | `FiniteDistribution[{states},{masses}]`: real masses between 0 and 1, summing exactly to 1; no implicit normalization. |
+| Weights | `WeightedDistribution[{states},{weights}]`: nonnegative real weights with positive total; explicit normalization. |
+| Bernoulli | `BernoulliDistribution[p]`: states `{0,1}`, masses `{1-p,p}`, requiring `0<=p<=1`. |
+| Discrete uniform | `DiscreteUniformDistribution[{a,b}]`: consecutive integers with inclusive exact integer endpoints. |
+| Inspection | `States[d]` and `Probabilities[d]`: aligned lists including zero masses. |
+| Effective support | `Support[d]`: positive-mass states; undecidable zero masses require parameter specialization. |
+| Moments | `Mean[d]`, `Variance[d]`, `StandardDeviation[d]`; population variance of the distribution. |
+| Entropy | `Entropy[d]`: Shannon entropy in nats, natural logarithm and `0 Log[0]=0`. |
+| Event | `Probability[event,{x,d}]`: probability of a logical event. |
+| Observable | `Expectation[expression,{x,d}]`: finite weighted sum, including complex observables. |
+
+Evaluate one line at a time in a session:
+
+```wolfram
+d=FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]
+Mean[d]
+Variance[d]
+Expectation[x^2,{x,d}]
+Probability[x>=1,{x,d}]
+Entropy[d]
+```
+
+Results are respectively `1`, `1/2`, `3/2`, `3/4`, and `3 Log[2]/2`.
+The bound variable shadows its outer definition without changing the session.
+Scalar events such as `Probability[a,{x,d}]` are rejected. Undecided parametric
+events retain a piecewise expression; ordered comparisons require real operands.
+
+Realness, nonnegativity, distinct states, and normalization are executable
+requirements. They survive constant results, replacement, and validated JSON
+session storage. Loading never executes input expressions. Canonical
+`FiniteDistribution[...]` input alone does not preserve original weight-domain
+restrictions; retain the result's accompanying conditions.
+
+Provably zero-mass states are skipped before evaluating an event or observable.
+A singularity confined to those states is allowed; if the mass cannot be shown
+zero, an undefined value is conservatively rejected. Entropy retains zero-mass
+branches after parameter replacement and storage.
+
+Scope: one variable, 1–64 states, eight symbols and 256 input operations;
+up to 4096 result operations. Bound operations share a 2000-term budget.
+These are not hard time or memory limits. `N[Mean[d],p]` and
+`N[Probabilities[d],p]` provide approximations; `N[d]` does not construct an
+approximate distribution. Floating masses use their exact stored binary sum,
+with no hidden tolerance. Floating weights are explicitly normalized as binary
+rationals, without certified input uncertainty. See the
+[discrete-distribution conventions](https://www.itl.nist.gov/div898/handbook/eda/section3/eda361.htm).
+
+Joint, marginal and conditional distributions, covariance/correlation,
+generating functions, binomial and continuous distributions remain future
+increments. Random sampling, MaxEnt inference and simulation are not included.
 
 ## Linear algebra: development 0.2.0.dev4
 
