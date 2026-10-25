@@ -24,6 +24,11 @@ def bound_probability_call(node, build, restrictions, state, bindings, functions
     if not symbols or len(set(symbols)) != len(symbols) or len(symbols) > 4:
         raise ValueError("Se requieren entre una y cuatro variables distintas.")
     distribution = build(specification.children[1], restrictions, state, bindings, functions, definitions)
+    from .parametric_probability import ParametricDistribution
+    if isinstance(distribution, ParametricDistribution):
+        from .parametric_sampling import bound_parametric_call
+        return bound_parametric_call(node, distribution, symbols, build, restrictions, state,
+                                     bindings, functions, definitions)
     if isinstance(distribution, JointFiniteDistribution):
         dimension = distribution.dimension
         rows = distribution.states

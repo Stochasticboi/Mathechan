@@ -25,7 +25,7 @@ Las descargas anteriores conservan su alcance original.
 
 ## Desarrollo posterior
 
-El código en desarrollo **0.2.0.dev8** incorpora límites, series, productos,
+El código en desarrollo **0.2.0.dev9** incorpora límites, series, productos,
 derivadas mixtas, cálculo vectorial cartesiano, cilíndrico y esférico e integrales iteradas.
 La sustitución admite `expr /. x -> valor`, listas de reglas y reglas diferidas.
 Los operadores curvilíneos usan componentes ortonormales y conservan las
@@ -34,11 +34,15 @@ gradiente vectorial geométrico.
 Incluye álgebra lineal densa: operaciones con matrices, `Dot`/`A.B`,
 determinantes, inversas, rango, sistemas lineales, autovalores, autovectores,
 potencias y exponencial matricial. `N` admite matrices y listas numéricas.
-Inicia probabilidad discreta finita: distribuciones y pesos normalizados,
+Ofrece probabilidad discreta finita: distribuciones y pesos normalizados,
 Bernoulli, uniforme discreta, probabilidad de eventos, esperanza, varianza,
 desviación estándar y entropía, con condiciones conservadas en sesión.
 Admite tablas conjuntas finitas, marginales, condicionamiento sobre eventos,
 covarianza y correlación de observables reales.
+La etapa de probabilidad incorpora además binomial, Poisson, normal,
+exponencial y gamma, con `PDF`, `CDF`, `MGF`, `CF`, momentos y cumulantes.
+Incluye esperanzas condicionadas y generatrices multivariables para tablas
+conjuntas finitas, con dominios y convergencia explícitos.
 Incluye las seis funciones hiperbólicas y sus inversas, con derivación,
 integración, evaluación numérica y conservación de exclusiones de polos.
 Amplía el álgebra compleja para estados y operadores: `Conj`, `Re`, `Im`,

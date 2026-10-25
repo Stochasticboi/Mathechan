@@ -486,7 +486,7 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
             kind = "matrix"
         elif isinstance(expression, HeldExpression):
             kind = "held"
-        elif expression.func.__name__ in {"FiniteDistribution", "JointFiniteDistribution"}:
+        elif expression.func.__name__ in {"FiniteDistribution", "JointFiniteDistribution", "ParametricDistribution"}:
             kind = "distribution"
         elif expression.func.__name__ == "RuleValue":
             kind = "rule"

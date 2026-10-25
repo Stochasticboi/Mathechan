@@ -80,6 +80,9 @@ class Session:
             from .replacement import RuleValue
             from .finite_probability import FiniteDistribution
             from .joint_probability import JointFiniteDistribution
+            from .parametric_probability import ParametricDistribution
+            if isinstance(item, ParametricDistribution):
+                return all(supported(child) for child in item.parameters)
             if isinstance(item, (FiniteDistribution, JointFiniteDistribution)):
                 return all(supported(child) for child in item.args)
             if (item is sp.true or item is sp.false or
