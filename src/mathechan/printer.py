@@ -4,12 +4,16 @@ import re
 
 import sympy as sp
 
+from .hyperbolic import HYPERBOLIC_FUNCTIONS
+
 
 class UnrepresentableExpression(ValueError):
     """The result has no supported, bounded input representation."""
 
 
-FUNCTION_NAMES = {sp.sin: "Sin", sp.cos: "Cos", sp.exp: "Exp", sp.log: "Log"}
+FUNCTION_NAMES = {sp.sin: "Sin", sp.cos: "Cos", sp.exp: "Exp", sp.log: "Log",
+                  sp.asin: "ArcSin", sp.acos: "ArcCos", sp.atan: "ArcTan",
+                  **{function: name for name, function in HYPERBOLIC_FUNCTIONS.items()}}
 SYMBOL_NAME = re.compile(r"[A-Za-z][A-Za-z0-9]*")
 
 

@@ -68,6 +68,8 @@ def calculus_call(node, build, restrictions, state, bindings, functions, definit
         local = []
         expression = scalar(read(node.children[0], local, child, scope, defs))
         outcome = derivative_expression(expression, specs)
+        from .hyperbolic import track_hyperbolic_derivative
+        track_hyperbolic_derivative(expression, outcome.value, local)
         absorb_child(child)
         if functions and outcome.value.has(sp.Derivative):
             # A formal derivative inside DSolve is its equation's input,
@@ -106,6 +108,8 @@ def calculus_call(node, build, restrictions, state, bindings, functions, definit
         local = []
         expression = read(node.children[0], local, child, scope, defs)
         outcome = vector_expression(name, expression, symbols, chart, mode)
+        from .hyperbolic import track_hyperbolic_derivative
+        track_hyperbolic_derivative(expression, outcome.value, local)
         mapping = {sp.Symbol(key): value for key, value in bindings.items()}
         requirements = []
         for condition in (*sp.And.make_args(child.assumptions), *child.requirements, *chart_requirements):
