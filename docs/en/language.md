@@ -219,7 +219,8 @@ all real arguments. These conditions survive substitution and storage;
 an algebraic continuation outside the convergence domain is not treated
 as a convergent integral.
 
-Events and observables bind local variables, for example
+Events and observables bind local variables. Free event parameters are restricted
+to real values, with requirements retained through substitution and storage. For example:
 `Probability[x>0,{x,NormalDistribution[0,1]}]` and
 `Expectation[x^2,{x,NormalDistribution[0,1]}]`. Covariance and correlation
 for scalar families support real polynomial observables within the moment

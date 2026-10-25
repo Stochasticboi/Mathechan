@@ -31,6 +31,12 @@ class ProbabilityExtensionLanguageTests(unittest.TestCase):
             ('Probability[Or[x<0,x>0],{x,NormalDistribution[0,1]}]', '1')):
             with self.subTest(source=source):
                 self.assertEqual(evaluate(source).text, expected)
+        session = Session()
+        result = session.evaluate('p=Probability[x+a>0,{x,NormalDistribution[0,1]}]')
+        self.assertIn('Contains(a, Reals)', result.conditions)
+        self.assertEqual(session.evaluate('p/.a->0').text, '1/2')
+        with self.assertRaises(MathechanError):
+            session.evaluate('p/.a->Imag')
 
     def test_observable_binding_and_family_parameter_scope(self):
         session = Session()

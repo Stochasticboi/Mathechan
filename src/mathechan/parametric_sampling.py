@@ -208,6 +208,13 @@ def bound_parametric_call(node, distribution, symbols, build, restrictions, stat
 
     def event_domain(raw):
         event = read(raw)
+        parameters = event.free_symbols-{variable}
+        if len(parameters) > 8 or sp.count_ops(event) > 256:
+            raise ValueError("El evento admite hasta ocho parámetros y 256 operaciones.")
+        # The inequality solver below uses real parameter proxies. Retain
+        # that domain explicitly; never silently turn a complex threshold real.
+        for parameter in parameters:
+            require(sp.Contains(parameter, sp.S.Reals))
         for relation in event.atoms(Relational):
             for operand in (relation.lhs, relation.rhs):
                 if not operand.has(variable) and operand not in (sp.oo, -sp.oo):

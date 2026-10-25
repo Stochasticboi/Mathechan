@@ -225,7 +225,9 @@ todo argumento real. Estas restricciones se conservan tras sustitución y
 persistencia; no se confunde una continuación algebraica con una integral
 convergente fuera de ese dominio.
 
-Eventos y observables usan variables locales, por ejemplo
+Eventos y observables usan variables locales. Los parámetros libres de los
+eventos se restringen a valores reales, con condiciones conservadas tras
+sustitución y persistencia. Por ejemplo:
 `Probability[x>0,{x,NormalDistribution[0,1]}]` y
 `Expectation[x^2,{x,NormalDistribution[0,1]}]`. Las covarianzas y correlaciones
 de familias escalares admiten observables polinómicos reales dentro del
