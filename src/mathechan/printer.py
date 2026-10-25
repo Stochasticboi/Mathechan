@@ -13,6 +13,7 @@ class UnrepresentableExpression(ValueError):
 
 FUNCTION_NAMES = {sp.sin: "Sin", sp.cos: "Cos", sp.exp: "Exp", sp.log: "Log",
                   sp.asin: "ArcSin", sp.acos: "ArcCos", sp.atan: "ArcTan",
+                  sp.conjugate: "Conj", sp.re: "Re", sp.im: "Im", sp.Abs: "Abs",
                   **{function: name for name, function in HYPERBOLIC_FUNCTIONS.items()}}
 SYMBOL_NAME = re.compile(r"[A-Za-z][A-Za-z0-9]*")
 
@@ -41,13 +42,17 @@ def _write(expression, depth):
         raise UnrepresentableExpression("Expression is too deeply nested.")
     if expression is sp.I:
         return "Sqrt[-1]"
+    if expression is sp.true:
+        return "True"
+    if expression is sp.false:
+        return "False"
     if expression is sp.pi:
         return "Pi"
     if expression is sp.E:
         return "E"
     if isinstance(expression, sp.Symbol):
         name = expression.name
-        if not SYMBOL_NAME.fullmatch(name) or name in ("Pi", "E"):
+        if not SYMBOL_NAME.fullmatch(name) or name in ("Pi", "E", "Imag"):
             raise UnrepresentableExpression("Unsupported or reserved symbol name.")
         if expression != sp.Symbol(name):
             raise UnrepresentableExpression("Symbol assumptions cannot be encoded.")

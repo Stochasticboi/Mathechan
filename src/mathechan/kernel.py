@@ -235,7 +235,7 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
             if isinstance(value, UserFunction):
                 raise MathechanError("La función definida requiere argumentos entre corchetes.")
             return value
-        return {"Pi": sp.pi, "E": sp.E, "Infinity": sp.oo, "True": sp.true,
+        return {"Pi": sp.pi, "E": sp.E, "Imag": sp.I, "Infinity": sp.oo, "True": sp.true,
                 "False": sp.false, "Reals": sp.S.Reals, "Complexes": sp.S.Complexes,
                 "Integers": sp.S.Integers}.get(node.value, sp.Symbol(node.value))
     if node.kind == "list":

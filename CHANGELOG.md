@@ -1,5 +1,39 @@
 # Versiones / Releases
 
+## 0.2.0.dev8 — Sin publicar / Unreleased
+
+### Español
+
+- Álgebra compleja con nombres breves: `Conj`, `Re`, `Im`, `Adj`, `Inner`,
+  `Norm`, `Unit`, `Dyad`, `Proj`, `Kron` y `Ortho`. `Imag` representa la unidad
+  imaginaria; `I` conserva su significado de símbolo genérico.
+- `HermQ`, `UnitaryQ` y `PSDCheck` verifican identidades o devuelven fórmulas
+  simbólicas pendientes. `PTrace` calcula la traza parcial por subsistemas,
+  con el primer factor tensorial como el más significativo.
+- Requisitos ejecutables de norma positiva conservados tras simplificación,
+  asignación y persistencia. Los predicados booleanos simbólicos se guardan,
+  cargan y reducen mediante sustitución; `Assuming` ofrece refinamiento parcial.
+- Matrices hasta 8×8 y 64 entradas; `PSDCheck` hasta 4×4 y traza parcial con
+  hasta cuatro subsistemas y dimensión total ocho. Los datos aproximados no
+  tienen tolerancia de clasificación ni precisión certificada; `Ortho` avisa
+  de bases casi dependientes. La descarga 0.2.0-dev0 conserva su alcance anterior.
+
+### English
+
+- Short complex-algebra commands: `Conj`, `Re`, `Im`, `Adj`, `Inner`, `Norm`,
+  `Unit`, `Dyad`, `Proj`, `Kron` and `Ortho`. `Imag` represents the imaginary
+  unit; `I` remains a generic symbol.
+- `HermQ`, `UnitaryQ` and `PSDCheck` check identities or return undecided
+  symbolic formulas. `PTrace` traces out selected subsystems, with the first
+  tensor factor the most significant.
+- Executable positive-norm requirements survive simplification, assignment
+  and storage. Symbolic boolean predicates can be saved, loaded and reduced
+  through substitution; `Assuming` provides partial refinement.
+- Matrices up to 8×8 and 64 entries; `PSDCheck` up to 4×4 and partial trace
+  with up to four subsystems and total dimension eight. Approximate inputs
+  have no classification tolerance or certified precision; `Ortho` warns
+  about nearly dependent bases. The 0.2.0-dev0 download retains its earlier scope.
+
 ## 0.2.0.dev7 — Sin publicar / Unreleased
 
 ### Español
