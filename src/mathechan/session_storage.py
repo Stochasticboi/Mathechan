@@ -115,6 +115,10 @@ class Codec:
     def encode(self, value, depth=0):
         self.tick(depth)
         from .finite_probability import FiniteDistribution
+        from .joint_probability import JointFiniteDistribution
+        if isinstance(value, JointFiniteDistribution):
+            return {"type": "joint_finite_distribution", "states": self.encode(value.states, depth + 1),
+                    "probabilities": self.encode(value.probabilities, depth + 1)}
         if isinstance(value, FiniteDistribution):
             return {"type": "finite_distribution", "states": self.encode(value.states, depth + 1),
                     "probabilities": self.encode(value.probabilities, depth + 1)}
@@ -171,6 +175,12 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "joint_finite_distribution":
+            from .joint_probability import JointFiniteDistribution
+            _keys(data, ("type", "states", "probabilities"))
+            states = self.decode(data["states"], depth + 1)
+            probabilities = self.decode(data["probabilities"], depth + 1)
+            return JointFiniteDistribution(states, probabilities)
         if kind == "finite_distribution":
             from .finite_probability import FiniteDistribution
             _keys(data, ("type", "states", "probabilities"))

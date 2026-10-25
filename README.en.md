@@ -25,7 +25,7 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev5** adds limits, series, products, mixed
+Development source **0.2.0.dev6** adds limits, series, products, mixed
 derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
 Replacement supports `expr /. x -> value`, rule lists and delayed rules.
 Curvilinear operators use orthonormal components and retain chart conditions;
@@ -37,6 +37,8 @@ Finite discrete probability is available through distributions and explicit
 weight normalization, Bernoulli and discrete uniform constructors, event
 probabilities, expectation, variance, standard deviation and entropy, with
 requirements retained in sessions.
+It supports finite joint tables, marginalization, event conditioning, and
+covariance/correlation of real observables.
 These increments are not in the 0.2.0-dev0 download. See the
 [language reference](docs/en/language.md) for scope and restrictions.
 

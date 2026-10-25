@@ -56,7 +56,10 @@ def _write(expression, depth):
         raise UnrepresentableExpression("Too many arguments.")
     write = lambda item: _write(item, depth + 1)
     from .finite_probability import FiniteDistribution
-    if isinstance(expression, FiniteDistribution):
+    from .joint_probability import JointFiniteDistribution
+    if isinstance(expression, JointFiniteDistribution):
+        result = "JointFiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"
+    elif isinstance(expression, FiniteDistribution):
         result = "FiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"
     elif isinstance(expression, sp.Equality):
         result = f"({write(expression.lhs)})==({write(expression.rhs)})"

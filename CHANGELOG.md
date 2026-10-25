@@ -1,5 +1,35 @@
 # Versiones / Releases
 
+## 0.2.0.dev6 — Sin publicar / Unreleased
+
+### Español
+
+- `JointFiniteDistribution` para tablas finitas de dos a cuatro coordenadas,
+  con estados distintos, masas normalizadas y requisitos ejecutables.
+- `MarginalDistribution` proyecta y agrupa coordenadas por índices desde uno;
+  `Probability` y `Expectation` admiten múltiples variables locales.
+- `ConditionalDistribution` condiciona sobre eventos decididos por fila,
+  conservando su probabilidad positiva incluso tras cancelación y guardado.
+- `Covariance` y `Correlation` de observables reales, calculadas con momentos
+  centrados y condiciones de varianza positiva. Persistencia validada y
+  representación reutilizable para distribuciones conjuntas.
+- Seis casos nuevos de aceptación del ejecutable y documentación ES/EN existente
+  actualizada. Sin nuevas dependencias ni cambios en la release 0.2.0-dev0.
+
+### English
+
+- `JointFiniteDistribution` for finite tables of two to four coordinates, with
+  distinct states, normalized masses and executable requirements.
+- `MarginalDistribution` projects and groups coordinates using one-based indices;
+  `Probability` and `Expectation` accept multiple local variables.
+- `ConditionalDistribution` conditions on row-wise decided events, retaining
+  positive event probability through cancellation and session storage.
+- `Covariance` and `Correlation` for real observables use centered moments and
+  positive-variance requirements. Validated joint-distribution persistence and
+  reusable input representation.
+- Six additional executable acceptance cases and updated existing bilingual
+  documentation. No new dependencies or changes to the 0.2.0-dev0 release.
+
 ## 0.2.0.dev5 — Sin publicar / Unreleased
 
 ### Español

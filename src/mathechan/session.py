@@ -77,7 +77,8 @@ class Session:
         def supported(item):
             from .replacement import RuleValue
             from .finite_probability import FiniteDistribution
-            if isinstance(item, FiniteDistribution):
+            from .joint_probability import JointFiniteDistribution
+            if isinstance(item, (FiniteDistribution, JointFiniteDistribution)):
                 return all(supported(child) for child in item.args)
             if isinstance(item, RuleValue):
                 return True
