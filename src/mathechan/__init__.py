@@ -1,6 +1,6 @@
 """Mathechan: prototipo experimental; sin compatibilidad completa con Wolfram."""
 
-__version__ = "0.2.0.dev5"
+__version__ = "0.2.0.dev6"
 
 from .kernel import EvaluationResult, MathechanError, evaluate
 from .session import Session

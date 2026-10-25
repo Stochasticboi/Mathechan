@@ -2,10 +2,10 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev5**. La descarga publicada
+Este documento describe el código **0.2.0.dev6**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
-de dev3, el álgebra lineal de dev4 ni la probabilidad finita de dev5. Las subsecciones
+de dev3, el álgebra lineal de dev4 ni la probabilidad finita de dev5–dev6. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -114,9 +114,71 @@ binaria almacenada exacta, sin tolerancia oculta. Para pesos Float, la normaliza
 usa sus racionales binarios exactos y advierte que la incertidumbre no se certifica.
 Véanse las [convenciones de distribuciones discretas](https://www.itl.nist.gov/div898/handbook/eda/section3/eda361.htm).
 
-Quedan para incrementos posteriores las distribuciones conjuntas, marginales y
-condicionales, covarianza/correlación, generatrices, binomial y distribuciones
-continuas. No se añaden muestreo aleatorio, inferencia MaxEnt ni simulaciones.
+### Distribuciones conjuntas y dependencias: desarrollo 0.2.0.dev6
+
+La etapa 5 prepara probabilidades, observables y medidas de dependencia para
+física estadística. Este incremento amplía la base discreta a varios observables;
+no implementa todavía inferencia MaxEnt/MaxCal ni simulaciones.
+
+`JointFiniteDistribution[{{x1,y1},...},{p1,...}]` representa masas de probabilidad
+conjuntas. Cada fila tiene de dos a cuatro coordenadas reales finitas. Las filas
+deben ser distintas, y las masas no negativas suman exactamente uno; no se
+presupone independencia ni que estén presentes todas las combinaciones de valores.
+
+| Operación | Sintaxis |
+|---|---|
+| Inspección y entropía | `States[d]`, `Probabilities[d]`, `Support[d]`, `Entropy[d]`, con las convenciones anteriores. |
+| Marginal | `MarginalDistribution[d,1]` proyecta la primera coordenada y suma las masas de valores repetidos. |
+| Varias coordenadas | `MarginalDistribution[d,{2,1}]` conserva ese orden; una sola coordenada produce `FiniteDistribution`, varias producen una conjunta. |
+| Evento/observable | `Probability[evento,{{x,y},d}]`, `Expectation[expresión,{{x,y},d}]`; variables locales distintas, una por coordenada. |
+| Condicionamiento | `ConditionalDistribution[evento,{{x,y},d}]`; también admite una distribución escalar con `{x,d}`. |
+| Covarianza | `Covariance[f,g,{{x,y},d}]`, para observables reales de la misma distribución. |
+| Correlación | `Correlation[f,g,{{x,y},d}]`, con ambas varianzas estrictamente positivas. |
+
+La marginal usa `q(z)=Sum[p_i]` sobre las filas proyectadas en `z`. Las
+colisiones simbólicas no decididas pueden producir requisitos de distinción:
+si después coinciden valores antes tratados como distintos, hay que recalcular
+desde la distribución original ya especializada.
+
+El condicionamiento calcula `p_i 1_A(i)/P(A)` y conserva el requisito ejecutable
+`P(A)>0` antes de cancelar. Un evento de probabilidad cero se rechaza. Su verdad
+debe poder decidirse en cada fila de masa no nula o indecidida; las igualdades
+simples de las hipótesis pueden decidir parámetros. Si no se decide, se pide
+especialización. Las filas descartadas permanecen declaradas con masa cero;
+`Support` devuelve sólo el soporte efectivo. La entrada canónica normalizada
+no reconstruye por sí sola la condición original de probabilidad positiva.
+
+La covarianza poblacional se calcula mediante la suma centrada
+`E[(f-E[f])*(g-E[g])]`, sin corrección muestral ni conjugación compleja. La
+correlación divide por el producto de desviaciones estándar; una varianza cero
+se rechaza incluso si una expresión genérica se simplificaría a `1`. Se permite
+`Expectation` de un observable complejo, pero esta covarianza exige observables
+reales. Covarianza cero no demuestra independencia.
+
+Ejemplo de ocupación binaria de dos sitios, una línea por evaluación:
+
+```wolfram
+d=JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]
+Mean[MarginalDistribution[d,1]]
+Covariance[x,y,{{x,y},d}]
+Correlation[x,y,{{x,y},d}]
+c=ConditionalDistribution[x==1,{{x,y},d}]
+Probability[y==1,{{x,y},c}]
+```
+
+Los resultados numéricos son `1/2`, `1/8`, `1/2` y `3/4`, respectivamente.
+Las hipótesis, las condiciones de los eventos y las varianzas positivas se
+conservan tras sustituciones y al guardar/cargar. Las distribuciones conjuntas
+son datos validados; abrirlas no ejecuta expresiones.
+
+Se mantienen 64 filas, ocho símbolos y 256 operaciones de entrada, con un
+máximo de cuatro coordenadas por fila; límites del parser y de resultados
+siguen aplicándose. Las masas Float se agregan y condicionan como sus valores
+binarios exactos, sin certificar incertidumbre. No hay tolerancia automática
+para declarar nulas probabilidades o varianzas pequeñas.
+
+Quedan para incrementos posteriores generatrices, binomial, otras familias y
+distribuciones continuas. No se añaden muestreo aleatorio ni simulaciones.
 
 ## Álgebra lineal: desarrollo 0.2.0.dev4
 

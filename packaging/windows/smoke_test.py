@@ -60,6 +60,12 @@ SCIENTIFIC_CASES = (
     ("weighted-mean", "Mean[WeightedDistribution[{0,2},{1,3}]]"),
     ("bernoulli-variance", "Variance[BernoulliDistribution[1/4]]"),
     ("discrete-uniform-mean", "Mean[DiscreteUniformDistribution[{1,6}]]"),
+    ("joint-event", "Probability[And[x==1,y==1],{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
+    ("joint-expectation", "Expectation[x*y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
+    ("joint-marginal", "Mean[MarginalDistribution[JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}],1]]"),
+    ("joint-conditional", "Probability[y==1,{{x,y},ConditionalDistribution[x==1,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]}]"),
+    ("joint-covariance", "Covariance[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
+    ("joint-correlation", "Correlation[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
 )
 
 CURVILINEAR_REFERENCES = {
@@ -72,6 +78,12 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "Probability[And[x==1,y==1],{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "3/8"),
+    "Expectation[x*y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "3/8"),
+    "Mean[MarginalDistribution[JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}],1]]": ("expression", "1/2"),
+    "Probability[y==1,{{x,y},ConditionalDistribution[x==1,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]}]": ("expression", "3/4"),
+    "Covariance[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "1/8"),
+    "Correlation[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "1/2"),
     "Mean[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": ("expression", "1"),
     "Variance[FiniteDistribution[{0,1,2},{1/4,1/2,1/4}]]": ("expression", "1/2"),
     "Entropy[FiniteDistribution[{0,1},{1/2,1/2}]]": ("expression", "log(2)"),

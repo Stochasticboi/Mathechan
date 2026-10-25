@@ -2,9 +2,9 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev5 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev6 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
-calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra, or dev5 finite probability. Historical 0.1.1 sections record the scope
+calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra, or dev5–dev6 finite probability. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -110,9 +110,70 @@ with no hidden tolerance. Floating weights are explicitly normalized as binary
 rationals, without certified input uncertainty. See the
 [discrete-distribution conventions](https://www.itl.nist.gov/div898/handbook/eda/section3/eda361.htm).
 
-Joint, marginal and conditional distributions, covariance/correlation,
-generating functions, binomial and continuous distributions remain future
-increments. Random sampling, MaxEnt inference and simulation are not included.
+### Joint distributions and dependence: development 0.2.0.dev6
+
+Stage 5 prepares probabilities, observables and measures of dependence for
+statistical physics. This increment extends finite probability to multiple
+observables; it does not implement MaxEnt/MaxCal inference or simulation.
+
+`JointFiniteDistribution[{{x1,y1},...},{p1,...}]` represents joint probability
+masses. Rows have two to four finite real coordinates and must be distinct.
+Nonnegative masses sum exactly to one. Independence and a complete Cartesian
+product of coordinate values are not assumed.
+
+| Operation | Syntax |
+|---|---|
+| Inspection and entropy | `States[d]`, `Probabilities[d]`, `Support[d]`, `Entropy[d]`, with the previous conventions. |
+| Marginal | `MarginalDistribution[d,1]` projects the first coordinate and adds masses for repeated values. |
+| Multiple coordinates | `MarginalDistribution[d,{2,1}]` preserves that order; one coordinate returns `FiniteDistribution`, several return a joint distribution. |
+| Event/observable | `Probability[event,{{x,y},d}]`, `Expectation[expression,{{x,y},d}]`, with distinct local variables matching the coordinates. |
+| Conditioning | `ConditionalDistribution[event,{{x,y},d}]`; scalar distributions also accept `{x,d}`. |
+| Covariance | `Covariance[f,g,{{x,y},d}]`, for real observables on the same distribution. |
+| Correlation | `Correlation[f,g,{{x,y},d}]`, requiring both variances strictly positive. |
+
+Marginalization sums masses over rows with the same projected coordinates.
+Undecided symbolic collisions may produce distinctness requirements: when a
+later specialization merges values, recompute from the specialized original
+distribution rather than treating a generic branch as universal.
+
+Conditioning computes `p_i 1_A(i)/P(A)` and retains executable `P(A)>0` before
+cancellation. Zero-probability events are rejected. The event must be decidable
+at each nonzero or undecided-mass row; simple assumption equalities can resolve
+parameters. Otherwise specialize them first. Excluded rows retain zero masses;
+`Support` returns effective support. Canonical normalized input alone does not
+reconstruct the original positive-event requirement.
+
+Population covariance uses the centered sum `E[(f-E[f])*(g-E[g])]`, without
+sample correction or complex conjugation. Correlation divides by the product
+of standard deviations and rejects a zero variance even when a generic formula
+would simplify to `1`. Complex observables are supported by `Expectation`,
+whereas this covariance requires real observables. Zero covariance does not
+establish independence.
+
+Example for binary occupation of two sites, evaluated one line at a time:
+
+```wolfram
+d=JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]
+Mean[MarginalDistribution[d,1]]
+Covariance[x,y,{{x,y},d}]
+Correlation[x,y,{{x,y},d}]
+c=ConditionalDistribution[x==1,{{x,y},d}]
+Probability[y==1,{{x,y},c}]
+```
+
+Numerical results are respectively `1/2`, `1/8`, `1/2`, and `3/4`.
+Assumptions, positive-event requirements and positive variances survive
+replacement and session storage. Joint distributions are validated data;
+loading them does not execute expressions.
+
+Budgets remain 64 rows, eight symbols and 256 input operations, with up to four
+coordinates per row. Parser and output limits still apply. Float masses are
+added and conditioned as their exact stored binary values, without certified
+input uncertainty. There is no automatic tolerance for treating small
+probabilities or variances as zero.
+
+Generating functions, binomial, other families and continuous distributions
+remain future increments. Random sampling and simulation are not included.
 
 ## Linear algebra: development 0.2.0.dev4
 
