@@ -2,10 +2,11 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev6**. La descarga publicada
+Este documento describe el código **0.2.0.dev7**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
-de dev3, el álgebra lineal de dev4 ni la probabilidad finita de dev5–dev6. Las subsecciones
+de dev3, el álgebra lineal de dev4, la probabilidad finita de dev5–dev6 ni las
+hiperbólicas de dev7. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -55,6 +56,52 @@ contexto acotado de `DSolve`; no habilita definiciones arbitrarias. Los símbolo
 reales automáticamente. Las operaciones siguen las convenciones de SymPy y
 sus dominios complejos, salvo restricciones explícitas como las de `Plot`.
 El programa no proporciona todavía hipótesis físicas ni pasos de solución.
+
+## Funciones hiperbólicas: desarrollo 0.2.0.dev7
+
+Se admiten `Sinh`, `Cosh`, `Tanh`, `Coth`, `Sech` y `Csch`, y sus inversas
+`ArcSinh`, `ArcCosh`, `ArcTanh`, `ArcCoth`, `ArcSech` y `ArcCsch`.
+Todas requieren un argumento escalar finito. Funcionan en expresiones,
+derivadas ordinarias/superiores/mixtas y vectoriales, integrales, `N`, `Plot`
+y sesiones guardadas. Los resultados representables reciben entrada reutilizable.
+
+| Función | Derivada respecto de x |
+|---|---|
+| `Sinh[x]` | `Cosh[x]` |
+| `Cosh[x]` | `Sinh[x]` |
+| `Tanh[x]` | `Sech[x]^2`, también puede representarse como `1-Tanh[x]^2`. |
+| `Coth[x]` | `-Csch[x]^2` |
+| `Sech[x]` | `-Sech[x]*Tanh[x]` |
+| `Csch[x]` | `-Csch[x]*Coth[x]` |
+
+```wolfram
+D[Sinh[x],x]
+D[Sinh[3*x^2],x]
+Integrate[Cosh[x],x]
+Integrate[Sech[x],x]
+Integrate[1/Sqrt[1+x^2],x]
+```
+
+Estos ejemplos devuelven `Cosh[x]`, `6*x*Cosh[3*x^2]`, `Sinh[x]`,
+`2*ArcTan[Tanh[x/2]]` y `ArcSinh[x]`, respectivamente. El integrador omite la
+constante aditiva y lo advierte. Si la verificación sencilla de una primitiva
+hiperbólica no reconoce una identidad, intenta una transformación acotada a
+exponenciales; sólo declara residuo verificado cuando se reduce exactamente a cero.
+Una integral no resuelta o no verificada conserva su diagnóstico.
+
+No se supone que los símbolos sean reales. `Tanh` y `Sech` excluyen los ceros
+complejos de `Cosh`; `Coth` y `Csch` excluyen los de `Sinh`. `ArcTanh` y
+`ArcCoth` excluyen argumentos ±1; `ArcSech` y `ArcCsch` excluyen cero.
+Las exclusiones se registran antes de cancelar y acompañan a resultados y
+definiciones guardadas. Las derivadas hiperbólicas también conservan los
+denominadores explícitos de su resultado antes de operaciones posteriores.
+
+Las inversas usan valores principales complejos, de acuerdo con el backend;
+un argumento real fuera de una rama real puede producir un valor complejo.
+Las condiciones de polos no describen todos los cortes ni certifican
+diferenciabilidad global. Una primitiva verificada por derivación es una
+verificación local en su rama. Véanse las
+[convenciones de funciones hiperbólicas inversas](https://dlmf.nist.gov/4.37).
 
 ## Probabilidad discreta finita: desarrollo 0.2.0.dev5
 

@@ -66,6 +66,10 @@ SCIENTIFIC_CASES = (
     ("joint-conditional", "Probability[y==1,{{x,y},ConditionalDistribution[x==1,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]}]"),
     ("joint-covariance", "Covariance[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
     ("joint-correlation", "Correlation[x,y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]"),
+    ("hyperbolic-derivative", "D[Sinh[x],x]"),
+    ("hyperbolic-pole-domain", "D[Tanh[x],x]"),
+    ("hyperbolic-antiderivative", "Integrate[Sech[x],x]"),
+    ("inverse-hyperbolic-antiderivative", "Integrate[1/Sqrt[1+x^2],x]"),
 )
 
 CURVILINEAR_REFERENCES = {
@@ -78,6 +82,10 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "D[Sinh[x],x]": ("expression", "cosh(x)"),
+    "D[Tanh[x],x]": ("expression", "1 - tanh(x)**2"),
+    "Integrate[Sech[x],x]": ("expression", "2*atan(tanh(x/2))"),
+    "Integrate[1/Sqrt[1+x^2],x]": ("expression", "asinh(x)"),
     "Probability[And[x==1,y==1],{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "3/8"),
     "Expectation[x*y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": ("expression", "3/8"),
     "Mean[MarginalDistribution[JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}],1]]": ("expression", "1/2"),
@@ -192,6 +200,11 @@ def check_scientific_payload(source, payload):
             f"Unexpected exact scientific result: {source}")
     require(payload.get("exact") is True and payload.get("status") == expected_status,
             f"Unexpected scientific exactness or status: {source}")
+    if source == "D[Tanh[x],x]":
+        require("(Cosh[x]) != 0" in payload["conditions"], "Tanh derivative lost its excluded complex poles.")
+    if source in ("Integrate[Sech[x],x]", "Integrate[1/Sqrt[1+x^2],x]"):
+        require(details.get("verification") == "verified" and details.get("residual") == "0",
+                "Hyperbolic primitive must have a verified zero derivative residual.")
     if source.startswith("Series["):
         require(details.get("global_equality") is False and details.get("truncated") is True
                 and details.get("remainder") == ["O(x**6)"], "Series lost its local remainder metadata.")

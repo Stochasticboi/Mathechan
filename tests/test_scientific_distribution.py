@@ -25,6 +25,10 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "D[Sinh[x],x]": {"kind":"expression", "text":"cosh(x)"},
+        "D[Tanh[x],x]": {"kind":"expression", "text":"1 - tanh(x)**2", "conditions":["(Cosh[x]) != 0"]},
+        "Integrate[Sech[x],x]": {"kind":"expression", "text":"2*atan(tanh(x/2))", "details":{"verification":"verified","residual":"0"}},
+        "Integrate[1/Sqrt[1+x^2],x]": {"kind":"expression", "text":"asinh(x)", "details":{"verification":"verified","residual":"0"}},
         "Probability[And[x==1,y==1],{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": {"kind":"expression", "text":"3/8"},
         "Expectation[x*y,{{x,y},JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}]}]": {"kind":"expression", "text":"3/8"},
         "Mean[MarginalDistribution[JointFiniteDistribution[{{0,0},{0,1},{1,0},{1,1}},{3/8,1/8,1/8,3/8}],1]]": {"kind":"expression", "text":"1/2"},
@@ -146,7 +150,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 50)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 54)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -260,8 +264,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 54)
-            self.assertEqual(runner.call_count, 54)
+            self.assertEqual(len(checks), 58)
+            self.assertEqual(runner.call_count, 58)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

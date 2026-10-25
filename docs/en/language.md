@@ -2,9 +2,10 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev6 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev7 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
-calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra, or dev5–dev6 finite probability. Historical 0.1.1 sections record the scope
+calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
+dev5–dev6 finite probability, or dev7 hyperbolic functions. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -54,6 +55,51 @@ the bounded `DSolve` context, not as arbitrary definitions. Symbols are not
 automatically assumed real. Operations follow SymPy conventions and complex
 domains unless explicitly restricted, as with `Plot`. The program does not
 yet provide physical assumptions or solution steps.
+
+## Hyperbolic functions: development 0.2.0.dev7
+
+Supported functions are `Sinh`, `Cosh`, `Tanh`, `Coth`, `Sech`, `Csch` and
+their inverses `ArcSinh`, `ArcCosh`, `ArcTanh`, `ArcCoth`, `ArcSech`, `ArcCsch`.
+Each requires a finite scalar argument. They work in expressions, ordinary,
+higher, mixed and vector derivatives, integration, `N`, `Plot`, and saved sessions.
+Representable results receive verified reusable input.
+
+| Function | Derivative with respect to x |
+|---|---|
+| `Sinh[x]` | `Cosh[x]` |
+| `Cosh[x]` | `Sinh[x]` |
+| `Tanh[x]` | `Sech[x]^2`, possibly represented as `1-Tanh[x]^2`. |
+| `Coth[x]` | `-Csch[x]^2` |
+| `Sech[x]` | `-Sech[x]*Tanh[x]` |
+| `Csch[x]` | `-Csch[x]*Coth[x]` |
+
+```wolfram
+D[Sinh[x],x]
+D[Sinh[3*x^2],x]
+Integrate[Cosh[x],x]
+Integrate[Sech[x],x]
+Integrate[1/Sqrt[1+x^2],x]
+```
+
+These return `Cosh[x]`, `6*x*Cosh[3*x^2]`, `Sinh[x]`,
+`2*ArcTan[Tanh[x/2]]`, and `ArcSinh[x]`, respectively. The additive integration
+constant is omitted with a warning. When a simple primitive check misses a
+hyperbolic identity, a bounded exponential rewrite is attempted; verification
+requires an exactly zero derivative residual. Unresolved or unverified
+integrals retain their diagnostics.
+
+Symbols are not assumed real. `Tanh` and `Sech` exclude complex zeros of
+`Cosh`; `Coth` and `Csch` exclude zeros of `Sinh`. `ArcTanh` and `ArcCoth`
+exclude arguments ±1; `ArcSech` and `ArcCsch` exclude zero. Exclusions are
+tracked before cancellation and remain attached to results and saved definitions.
+Hyperbolic derivatives also retain explicit output denominators before later
+arithmetic can cancel them.
+
+Inverses use principal complex values supplied by the backend. A real argument
+outside a real branch can produce a complex result. Pole requirements do not
+describe every branch cut or certify global differentiability. A primitive
+verified by differentiation is a local branch verification. See the
+[inverse hyperbolic function conventions](https://dlmf.nist.gov/4.37).
 
 ## Finite discrete probability: development 0.2.0.dev5
 

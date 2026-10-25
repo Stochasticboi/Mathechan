@@ -14,6 +14,7 @@ from .printer import expression_input
 from .assumptions import ASSUMPTION_CALLS, assumption_call, refine_expression, validate_assumptions
 from .definitions import DeferredDefinition, DeferredFunction, StoredDefinition, UserFunction
 from .semantic_types import SEMANTIC_CALLS, HeldExpression, semantic_call, track_function_domain
+from .hyperbolic import HYPERBOLIC_FUNCTIONS, track_hyperbolic_domain
 
 
 class MathechanError(ValueError):
@@ -163,6 +164,7 @@ class Parser:
 
 
 FUNCTIONS = {
+    **HYPERBOLIC_FUNCTIONS,
     "Sin": sp.sin, "Cos": sp.cos, "Exp": sp.exp, "Log": sp.log,
     "Sqrt": sp.sqrt, "Abs": sp.Abs, "Expand": sp.expand, "Simplify": sp.simplify,
 }
@@ -338,6 +340,8 @@ def build(node, restrictions=None, state=None, bindings=None, functions=None, de
             raise MathechanError("La función requiere un argumento escalar.")
         if node.value in ("Log", "Sqrt"):
             track_function_domain(node.value, argument, restrictions, state)
+        elif node.value in HYPERBOLIC_FUNCTIONS:
+            track_hyperbolic_domain(node.value, argument, restrictions, state)
         argument = refine_expression(argument, getattr(state, "assumptions", sp.true))
         return refine_expression(FUNCTIONS[node.value](argument), getattr(state, "assumptions", sp.true))
     raise MathechanError("Construcción no admitida por el evaluador.")

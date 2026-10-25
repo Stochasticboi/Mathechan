@@ -14,11 +14,13 @@ from sympy.logic.boolalg import BooleanFunction
 
 from .definitions import StoredDefinition, UserFunction, DeferredDefinition, DeferredFunction
 from .semantic_types import HeldExpression
+from .hyperbolic import HYPERBOLIC_FUNCTIONS
 
 MAX_BYTES = 2 * 1024 * 1024
 MAX_NODES = 20000
 NAME = re.compile(r"[A-Za-z][A-Za-z0-9]*\Z")
 CONSTRUCTORS = {
+    **{function.__name__: function for function in HYPERBOLIC_FUNCTIONS.values()},
     "Add": sp.Add, "Mul": sp.Mul, "Pow": sp.Pow,
     "sin": sp.sin, "cos": sp.cos, "exp": sp.exp, "log": sp.log,
     "Abs": sp.Abs, "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,

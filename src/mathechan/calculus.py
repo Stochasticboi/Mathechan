@@ -95,6 +95,12 @@ def integrate_expression(expr, variable, bounds=None):
     )
     if bounds is None and not unresolved:
         residual = sp.simplify(sp.diff(result, variable) - expr)
+        from .hyperbolic import simplify_hyperbolic_residual, HYPERBOLIC_FUNCTIONS
+        residual = simplify_hyperbolic_residual(expr, residual)
+        if (expr.has(*HYPERBOLIC_FUNCTIONS.values()) and
+                result.has(sp.log, sp.atan, *(function for name,function in HYPERBOLIC_FUNCTIONS.items()
+                                             if name.startswith("Arc")))):
+            warnings.append("La verificación de la primitiva es local; los cortes de rama no están certificados globalmente.")
         details.update(
             verification="verified" if residual == 0 else "unverified",
             residual=sp.sstr(residual),

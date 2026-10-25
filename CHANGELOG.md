@@ -1,5 +1,31 @@
 # Versiones / Releases
 
+## 0.2.0.dev7 — Sin publicar / Unreleased
+
+### Español
+
+- `Sinh`, `Cosh`, `Tanh`, `Coth`, `Sech`, `Csch` y sus seis inversas con
+  evaluación simbólica/numérica, derivación e integración.
+- Registro común para evaluación, entrada reutilizable y códec de sesiones.
+  Se conservan polos antes de cancelar y denominadores de derivadas escalares
+  o vectoriales; las ramas principales complejas tienen advertencias explícitas.
+- Verificación acotada de primitivas hiperbólicas mediante sus definiciones
+  exponenciales cuando la simplificación inicial no reconoce la identidad.
+- Cuatro casos adicionales de aceptación binaria y documentación ES/EN existente
+  actualizada. Sin nuevas dependencias ni cambios en la release 0.2.0-dev0.
+
+### English
+
+- `Sinh`, `Cosh`, `Tanh`, `Coth`, `Sech`, `Csch`, and their six inverses,
+  with symbolic/numerical evaluation, differentiation and integration.
+- Shared evaluation, reusable-input and session-codec registry. Pole exclusions
+  and scalar/vector derivative denominators survive cancellation; principal
+  complex branches have explicit warnings.
+- Bounded antiderivative verification through exponential definitions when
+  initial simplification does not recognize a hyperbolic identity.
+- Four additional executable acceptance cases and updated existing bilingual
+  documentation. No new dependencies or changes to the 0.2.0-dev0 release.
+
 ## 0.2.0.dev6 — Sin publicar / Unreleased
 
 ### Español
