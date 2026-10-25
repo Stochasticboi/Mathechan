@@ -2,10 +2,11 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev8 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev9 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
 calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
-dev5–dev6 finite probability, dev7 hyperbolic functions, or dev8 complex operations. Historical 0.1.1 sections record the scope
+dev5–dev6 finite probability, dev7 hyperbolic functions, dev8 complex operations,
+or dev9 probability families and moments. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -172,6 +173,99 @@ outside a real branch can produce a complex result. Pole requirements do not
 describe every branch cut or certify global differentiability. A primitive
 verified by differentiation is a local branch verification. See the
 [inverse hyperbolic function conventions](https://dlmf.nist.gov/4.37).
+
+## Probability and moments: development 0.2.0.dev9
+
+Stage 5 is complete for the families and operations documented here, together
+with the scalar and joint finite distributions from dev5–dev6. This scope
+does not include general continuous joint distributions or an arbitrary
+distribution catalog. The dev5–dev6 sections retain the earlier increment record.
+
+| Distribution | Parameters and convention |
+|---|---|
+| `BinomialDistribution[n,p]` | Nonnegative integer `n`, `0<=p<=1`. Includes `n=0`, `p=0` and `p=1`. |
+| `PoissonDistribution[lambda]` | `lambda>=0`; `lambda=0` concentrates all mass at zero. |
+| `NormalDistribution[mu,sigma]` | Real mean `mu`, standard deviation `sigma>0`. |
+| `ExponentialDistribution[rate]` | Rate `rate>0`; mean `1/rate`. |
+| `GammaDistribution[shape,scale]` | Positive shape and scale; mean `shape*scale`. The second parameter is not a rate. |
+
+Parameters are finite and real. Symbolic requirements remain attached to
+results and sessions; substitutions violating them are rejected even after
+simplification removes a parameter from the expression. Saving and loading
+reconstruct validated mathematical data without executing stored source.
+
+| Operation | Scope and meaning |
+|---|---|
+| `PDF[d,x]` | Point mass for discrete distributions; density for continuous ones. A density is not a point probability. |
+| `CDF[d,x]` | Right-continuous `P(X<=x)`; accepts infinite endpoints. Discrete CDFs respect the integer lattice and the floor of the argument. |
+| `Support[d]` | Support set, possibly parameter-dependent; infinite supports are not enumerated. |
+| `Mean[d]`, `Variance[d]`, `StandardDeviation[d]` | Population mean, variance and standard deviation. |
+| `Entropy[d]` | Shannon entropy for masses; differential entropy for densities, in nats. Differential entropy can be negative. |
+| `MGF[d,t]` | `E[Exp[t*X]]`; alias `MomentGeneratingFunction`. |
+| `CF[d,t]` | `E[Exp[Imag*t*X]]`; alias `CharacteristicFunction`. |
+| `Moment[d,n]` | Raw moment `E[X^n]`, exact integer orders zero through twelve. |
+| `CentralMoment[d,n]` | `E[(X-E[X])^n]`, exact integer orders zero through twelve. |
+| `Cumulant[d,n]` | Cumulant of exact integer order one through twelve, from the cumulant generator around zero. |
+
+For finite joint distributions of dimension up to four, `MGF` and `CF`
+take one argument per coordinate: `MGF[j,{s,t}]`. Joint moments and
+cumulants use nonnegative multi-indices, for example `Moment[j,{1,1}]`
+or `Cumulant[j,{1,1}]`, with total order at most twelve. Mixed moments
+do not assume coordinate independence.
+
+Arguments of `MGF` and `CF` are real. Exponential MGF requires `t<rate`;
+gamma MGF requires `t<1/scale`. Their characteristic functions exist for
+all real arguments. These conditions survive substitution and storage;
+an algebraic continuation outside the convergence domain is not treated
+as a convergent integral.
+
+Events and observables bind local variables. Free event parameters are restricted
+to real values, with requirements retained through substitution and storage. For example:
+`Probability[x>0,{x,NormalDistribution[0,1]}]` and
+`Expectation[x^2,{x,NormalDistribution[0,1]}]`. Covariance and correlation
+for scalar families support real polynomial observables within the moment
+budget. Two observables of the same `x` are not two independent variables.
+
+Conditional expectation uses `Expectation[expr,{x,d},event]` and requires
+strictly positive event probability. Conditional moments use `expr=x^n`;
+for finite spaces, `Moment` can also be applied to
+`ConditionalDistribution[event,{x,d}]`. `ConditionalDistribution` remains
+a finite operation: this version does not construct a general truncated
+continuous-distribution object.
+
+```wolfram
+Mean[BinomialDistribution[10,1/4]]
+Probability[x==0,{x,PoissonDistribution[2]}]
+CDF[NormalDistribution[0,1],0]
+CentralMoment[NormalDistribution[0,2],4]
+Cumulant[PoissonDistribution[3],4]
+Expectation[x,{x,ExponentialDistribution[2]},x>1]
+```
+
+Results: `5/2`, `Exp[-2]`, `1/2`, `48`, `3` and `3/2`.
+
+Observables are checked before cancelling poles at positive-mass states.
+Zero-mass states are excluded before evaluating their observable. For
+continuous families, improper integrals and expectation existence are
+handled separately from formal simplification.
+
+Pending sums and integrals retain `unresolved` status and warnings rather
+than being presented as computed digits. This includes Poisson entropy
+and some symbolic/large-binomial cumulative probabilities or entropies.
+Gamma density may diverge at zero for `shape<1` while its integral remains
+normalizable. Support sets may lack reusable `input`, and not every set is
+assignable or storable. Approximate inputs do not certify precision or
+physical uncertainty; more digits do not repair uncertain data.
+Family variances use direct identities rather than subtracting large,
+nearly equal moments. Moment and observable calculations that rationalize
+stored binary values avoid that arithmetic cancellation without recovering
+information absent from the original data.
+
+Budgets: up to eight symbols and 256 input operations for families; moments
+up to total order twelve; finite joint tables up to four coordinates and
+64 states. Outputs allow at most 4096 operations. These structural limits
+do not guarantee execution time or memory use. MaxEnt, MaxCal and simulation
+belong to later stages.
 
 ## Finite discrete probability: development 0.2.0.dev5
 

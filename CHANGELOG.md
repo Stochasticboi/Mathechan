@@ -1,5 +1,40 @@
 # Versiones / Releases
 
+## 0.2.0.dev9 — Sin publicar / Unreleased
+
+### Español
+
+- Binomial, Poisson, normal, exponencial y gamma, con validación de parámetros,
+  casos degenerados, soporte, masas/densidades y acumuladas `PDF`/`CDF`.
+  Gamma usa forma y escala; exponencial usa tasa.
+- `MGF` y `CF`, con alias `MomentGeneratingFunction` y `CharacteristicFunction`;
+  `Moment`, `CentralMoment` y `Cumulant`, también con multiíndices en tablas
+  conjuntas finitas. Se conservan los dominios de convergencia.
+- Eventos y esperanzas en familias escalares; esperanza condicionada mediante
+  `Expectation[expr,{x,d},evento]`. `ConditionalDistribution` conserva el
+  alcance finito. Las sumas e integrales pendientes se declaran sin resolver.
+- Persistencia de distribuciones y requisitos sin ejecutar su fuente al
+  cargar. Documentación bilingüe del cierre de etapa 5 dentro de su alcance:
+  familias enumeradas y tablas conjuntas finitas, sin un catálogo universal.
+
+### English
+
+- Binomial, Poisson, normal, exponential and gamma families, with parameter
+  validation, degenerate cases, support, mass/density and `PDF`/`CDF` queries.
+  Gamma uses shape and scale; exponential uses rate.
+- `MGF` and `CF`, with `MomentGeneratingFunction` and `CharacteristicFunction`
+  aliases; `Moment`, `CentralMoment` and `Cumulant`, including multi-indices
+  for finite joint tables. Transform convergence domains are retained.
+- Scalar-family events and expectations; conditional expectations through
+  `Expectation[expr,{x,d},event]`. `ConditionalDistribution` remains finite.
+  Pending sums and integrals are reported as unresolved.
+- Distribution and requirement persistence without executing source on load.
+  Bilingual documentation closes stage 5 within its stated scope: the listed
+  families and finite joint tables, rather than a universal catalog.
+
+La descarga 0.2.0-dev0 conserva su alcance anterior. / The 0.2.0-dev0
+download retains its earlier scope.
+
 ## 0.2.0.dev8 — Sin publicar / Unreleased
 
 ### Español

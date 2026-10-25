@@ -2,11 +2,12 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev8**. La descarga publicada
+Este documento describe el código **0.2.0.dev9**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
 de dev3, el álgebra lineal de dev4, la probabilidad finita de dev5–dev6 ni las
-hiperbólicas de dev7 ni las operaciones complejas de dev8. Las subsecciones
+hiperbólicas de dev7, las operaciones complejas de dev8 ni las familias y
+momentos probabilísticos de dev9. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -176,6 +177,103 @@ Las condiciones de polos no describen todos los cortes ni certifican
 diferenciabilidad global. Una primitiva verificada por derivación es una
 verificación local en su rama. Véanse las
 [convenciones de funciones hiperbólicas inversas](https://dlmf.nist.gov/4.37).
+
+## Probabilidad y momentos: desarrollo 0.2.0.dev9
+
+La etapa 5 queda completada para las familias y operaciones descritas aquí,
+junto con las distribuciones escalares y conjuntas finitas de dev5–dev6.
+Este alcance no incluye distribuciones conjuntas continuas generales ni un
+catálogo arbitrario de distribuciones. Los apartados de dev5–dev6 conservan
+el registro de los incrementos anteriores.
+
+| Distribución | Parámetros y convención |
+|---|---|
+| `BinomialDistribution[n,p]` | `n` entero no negativo, `0<=p<=1`. Admite `n=0`, `p=0` y `p=1`. |
+| `PoissonDistribution[lambda]` | `lambda>=0`; `lambda=0` concentra toda la masa en cero. |
+| `NormalDistribution[mu,sigma]` | Media real `mu` y desviación estándar `sigma>0`. |
+| `ExponentialDistribution[rate]` | Tasa `rate>0`; media `1/rate`. |
+| `GammaDistribution[shape,scale]` | Forma y escala positivas; media `shape*scale`. El segundo parámetro no es una tasa. |
+
+Los parámetros son reales finitos. Las condiciones simbólicas se conservan
+en el resultado y en las sesiones; una sustitución que las viola se rechaza,
+incluso si una simplificación ya eliminó el parámetro de la expresión.
+Guardar y cargar reconstruye datos matemáticos validados, sin ejecutar la
+fuente guardada.
+
+| Operación | Alcance y significado |
+|---|---|
+| `PDF[d,x]` | Masa puntual en distribuciones discretas; densidad en continuas. Una densidad no es la probabilidad de un punto. |
+| `CDF[d,x]` | `P(X<=x)`, continua por derecha; acepta extremos infinitos. La versión discreta respeta el retículo y el piso del argumento. |
+| `Support[d]` | Conjunto de soporte; puede depender de los parámetros. No enumera un soporte infinito. |
+| `Mean[d]`, `Variance[d]`, `StandardDeviation[d]` | Media, varianza y desviación estándar poblacionales. |
+| `Entropy[d]` | Shannon para masas; entropía diferencial para densidades, en nats. La entropía diferencial puede ser negativa. |
+| `MGF[d,t]` | `E[Exp[t*X]]`; alias `MomentGeneratingFunction`. |
+| `CF[d,t]` | `E[Exp[Imag*t*X]]`; alias `CharacteristicFunction`. |
+| `Moment[d,n]` | Momento respecto al origen `E[X^n]`, orden entero exacto de cero a doce. |
+| `CentralMoment[d,n]` | `E[(X-E[X])^n]`, orden entero exacto de cero a doce. |
+| `Cumulant[d,n]` | Cumulante de orden entero exacto de uno a doce, obtenido de la generatriz de cumulantes alrededor de cero. |
+
+En una distribución conjunta finita de dimensión hasta cuatro, `MGF` y `CF`
+reciben una lista de argumentos, uno por coordenada: `MGF[j,{s,t}]`.
+Los momentos y cumulantes conjuntos usan multiíndices de órdenes no negativos,
+por ejemplo `Moment[j,{1,1}]` o `Cumulant[j,{1,1}]`, con orden total hasta doce.
+El momento mixto no presupone independencia entre coordenadas.
+
+Los argumentos de `MGF` y `CF` son reales. La MGF exponencial exige `t<rate`;
+la gamma exige `t<1/scale`. Sus funciones características son válidas para
+todo argumento real. Estas restricciones se conservan tras sustitución y
+persistencia; no se confunde una continuación algebraica con una integral
+convergente fuera de ese dominio.
+
+Eventos y observables usan variables locales. Los parámetros libres de los
+eventos se restringen a valores reales, con condiciones conservadas tras
+sustitución y persistencia. Por ejemplo:
+`Probability[x>0,{x,NormalDistribution[0,1]}]` y
+`Expectation[x^2,{x,NormalDistribution[0,1]}]`. Las covarianzas y correlaciones
+de familias escalares admiten observables polinómicos reales dentro del
+presupuesto de momentos. No representan dos variables independientes por
+usar dos observables del mismo `x`.
+
+La esperanza condicionada se escribe `Expectation[expr,{x,d},evento]` y
+requiere probabilidad estrictamente positiva del evento. Los momentos
+condicionados se obtienen con `expr=x^n`; en espacios finitos también se
+puede aplicar `Moment` a `ConditionalDistribution[evento,{x,d}]`.
+`ConditionalDistribution` sigue siendo una operación finita: esta versión
+no construye un objeto general de distribución continua truncada.
+
+```wolfram
+Mean[BinomialDistribution[10,1/4]]
+Probability[x==0,{x,PoissonDistribution[2]}]
+CDF[NormalDistribution[0,1],0]
+CentralMoment[NormalDistribution[0,2],4]
+Cumulant[PoissonDistribution[3],4]
+Expectation[x,{x,ExponentialDistribution[2]},x>1]
+```
+
+Resultados: `5/2`, `Exp[-2]`, `1/2`, `48`, `3` y `3/2`.
+
+Los observables se comprueban antes de cancelar polos que estén dentro de
+un estado con masa positiva. Los estados de masa cero se excluyen antes de
+evaluar el observable. En continuas, las integrales impropias y la existencia
+de la esperanza se tratan por separado de una simplificación formal.
+
+Una suma o integral que el motor no resuelve conserva estado `unresolved` y
+sus advertencias: no se ofrece como cifra calculada. Esto incluye la entropía
+de Poisson y ciertas acumuladas o entropías binomiales simbólicas/grandes.
+Una densidad gamma puede divergir en cero para `shape<1`, aunque su integral
+sea normalizable. Los conjuntos de soporte pueden carecer de `input` reutilizable
+y no todos son asignables o guardables. Los datos aproximados no certifican
+precisión ni incertidumbre física; más cifras no reparan datos inciertos.
+Las varianzas de las familias usan identidades directas para evitar restar
+momentos grandes casi iguales. Los momentos y cálculos de observables que
+racionalizan valores binarios almacenados evitan esa cancelación aritmética,
+sin recuperar información que no estaba en los datos originales.
+
+Presupuestos: hasta ocho símbolos y 256 operaciones de entrada en familias;
+momentos hasta orden total doce; tablas conjuntas de hasta cuatro coordenadas
+y 64 estados. Salidas hasta 4096 operaciones. Son límites estructurales, sin
+garantía de tiempo o memoria. MaxEnt, MaxCal y simulación pertenecen a etapas
+posteriores.
 
 ## Probabilidad discreta finita: desarrollo 0.2.0.dev5
 

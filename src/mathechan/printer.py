@@ -66,7 +66,10 @@ def _write(expression, depth):
     write = lambda item: _write(item, depth + 1)
     from .finite_probability import FiniteDistribution
     from .joint_probability import JointFiniteDistribution
-    if isinstance(expression, JointFiniteDistribution):
+    from .parametric_probability import ParametricDistribution
+    if isinstance(expression, ParametricDistribution):
+        result = expression.family + "[" + ",".join(write(item) for item in expression.parameters) + "]"
+    elif isinstance(expression, JointFiniteDistribution):
         result = "JointFiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"
     elif isinstance(expression, FiniteDistribution):
         result = "FiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"

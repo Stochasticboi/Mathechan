@@ -25,6 +25,15 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "Mean[BinomialDistribution[10,1/3]]": {"kind":"expression", "text":"10/3"},
+        "Probability[x==0,{x,PoissonDistribution[0]}]": {"kind":"expression", "text":"1"},
+        "CDF[NormalDistribution[0,1],0]": {"kind":"expression", "text":"1/2"},
+        "Variance[ExponentialDistribution[2]]": {"kind":"expression", "text":"1/4"},
+        "Moment[GammaDistribution[2,3],2]": {"kind":"expression", "text":"54"},
+        "Cumulant[PoissonDistribution[3],4]": {"kind":"expression", "text":"3"},
+        "MGF[ExponentialDistribution[2],1]": {"kind":"expression", "text":"2"},
+        "CF[NormalDistribution[0,1],0]": {"kind":"expression", "text":"1"},
+        "Expectation[x,{x,ExponentialDistribution[2]},x>1]": {"kind":"expression", "text":"3/2"},
         "Imag^2": {"kind": "expression", "text": "-1"},
         "Inner[{1,Imag},{1,Imag}]": {"kind": "expression", "text": "2"},
         "Kron[{0,1},{1,0}]": {"kind": "list", "text": "{0,0,1,0}"},
@@ -157,7 +166,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 61)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 70)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -271,8 +280,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 65)
-            self.assertEqual(runner.call_count, 65)
+            self.assertEqual(len(checks), 74)
+            self.assertEqual(runner.call_count, 74)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

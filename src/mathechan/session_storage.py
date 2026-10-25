@@ -26,6 +26,10 @@ CONSTRUCTORS = {
     "Abs": sp.Abs, "asin": sp.asin, "acos": sp.acos, "atan": sp.atan,
     "gamma": sp.gamma, "Tuple": sp.Tuple,
     "conjugate": sp.conjugate, "re": sp.re, "im": sp.im,
+    "erf": sp.erf, "lowergamma": sp.lowergamma, "uppergamma": sp.uppergamma,
+    "polygamma": sp.polygamma, "factorial": sp.factorial, "binomial": sp.binomial,
+    "loggamma": sp.loggamma,
+    "floor": sp.floor, "ceiling": sp.ceiling,
     "Equality": sp.Eq, "Unequality": sp.Ne, "StrictGreaterThan": sp.Gt,
     "GreaterThan": sp.Ge, "StrictLessThan": sp.Lt, "LessThan": sp.Le,
     "And": sp.And, "Or": sp.Or, "Not": sp.Not, "Contains": sp.Contains,
@@ -35,6 +39,7 @@ CONSTRUCTORS = {
     "Order": sp.Order,
 }
 CONSTANTS = {"Pi": sp.pi, "E": sp.E, "I": sp.I, "Infinity": sp.oo,
+             "EulerGamma": sp.EulerGamma,
              "NegativeInfinity": -sp.oo, "True": sp.true, "False": sp.false,
              "Reals": sp.S.Reals, "Complexes": sp.S.Complexes,
              "Integers": sp.S.Integers, "Naturals": sp.S.Naturals,
@@ -116,6 +121,11 @@ class Codec:
         return Node(kind, value, tuple(self.ast_decode(child, depth + 1) for child in children))
 
     def encode(self, value, depth=0):
+        from .parametric_probability import ParametricDistribution
+        if isinstance(value, ParametricDistribution):
+            self.tick(depth)
+            return {"type": "parametric_distribution", "family": value.family,
+                    "parameters": self.encode(value.parameters, depth + 1)}
         self.tick(depth)
         from .finite_probability import FiniteDistribution
         from .joint_probability import JointFiniteDistribution
@@ -178,6 +188,12 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "parametric_distribution":
+            from .parametric_probability import ParametricDistribution
+            _keys(data, ("type", "family", "parameters"))
+            if not isinstance(data["family"], str):
+                raise ValueError("La familia de distribución requiere un nombre.")
+            return ParametricDistribution(data["family"], self.decode(data["parameters"], depth + 1))
         if kind == "joint_finite_distribution":
             from .joint_probability import JointFiniteDistribution
             _keys(data, ("type", "states", "probabilities"))

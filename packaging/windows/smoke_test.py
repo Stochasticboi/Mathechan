@@ -16,6 +16,15 @@ class SmokeTestError(RuntimeError):
 
 
 SCIENTIFIC_CASES = (
+    ("binomial-mean", "Mean[BinomialDistribution[10,1/3]]"),
+    ("poisson-point-mass", "Probability[x==0,{x,PoissonDistribution[0]}]"),
+    ("normal-cdf", "CDF[NormalDistribution[0,1],0]"),
+    ("exponential-variance", "Variance[ExponentialDistribution[2]]"),
+    ("gamma-moment", "Moment[GammaDistribution[2,3],2]"),
+    ("poisson-cumulant", "Cumulant[PoissonDistribution[3],4]"),
+    ("moment-generating-domain", "MGF[ExponentialDistribution[2],1]"),
+    ("characteristic-origin", "CF[NormalDistribution[0,1],0]"),
+    ("conditional-continuous-mean", "Expectation[x,{x,ExponentialDistribution[2]},x>1]"),
     ("imaginary-literal", "Imag^2"),
     ("hermitian-inner", "Inner[{1,Imag},{1,Imag}]"),
     ("tensor-order", "Kron[{0,1},{1,0}]"),
@@ -89,6 +98,15 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "Mean[BinomialDistribution[10,1/3]]": ("expression", "10/3"),
+    "Probability[x==0,{x,PoissonDistribution[0]}]": ("expression", "1"),
+    "CDF[NormalDistribution[0,1],0]": ("expression", "1/2"),
+    "Variance[ExponentialDistribution[2]]": ("expression", "1/4"),
+    "Moment[GammaDistribution[2,3],2]": ("expression", "54"),
+    "Cumulant[PoissonDistribution[3],4]": ("expression", "3"),
+    "MGF[ExponentialDistribution[2],1]": ("expression", "2"),
+    "CF[NormalDistribution[0,1],0]": ("expression", "1"),
+    "Expectation[x,{x,ExponentialDistribution[2]},x>1]": ("expression", "3/2"),
     "Imag^2": ("expression", "-1"),
     "Inner[{1,Imag},{1,Imag}]": ("expression", "2"),
     "Kron[{0,1},{1,0}]": ("list", "{0,0,1,0}"),

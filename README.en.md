@@ -25,7 +25,7 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev8** adds limits, series, products, mixed
+Development source **0.2.0.dev9** adds limits, series, products, mixed
 derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
 Replacement supports `expr /. x -> value`, rule lists and delayed rules.
 Curvilinear operators use orthonormal components and retain chart conditions;
@@ -39,6 +39,10 @@ probabilities, expectation, variance, standard deviation and entropy, with
 requirements retained in sessions.
 It supports finite joint tables, marginalization, event conditioning, and
 covariance/correlation of real observables.
+Probability also includes binomial, Poisson, normal, exponential and gamma
+families, with `PDF`, `CDF`, `MGF`, `CF`, moments and cumulants. Conditional
+expectations and multivariate transforms for finite joint tables retain
+explicit parameter and convergence conditions.
 The six hyperbolic functions and their inverses support differentiation,
 integration, numerical evaluation and persistent pole exclusions.
 Complex algebra for states and operators adds `Conj`, `Re`, `Im`, `Adj`,
