@@ -16,6 +16,14 @@ class SmokeTestError(RuntimeError):
 
 
 SCIENTIFIC_CASES = (
+    ("canonical-degenerate-probabilities", "Probabilities[Canon[{0,1,2},Log[2],{1,2,1}]]"),
+    ("canonical-energy", "Energy[Canon[{0,1,2},Log[2],{1,2,1}]]"),
+    ("canonical-variance", "Variance[Canon[{0,1,2},Log[2],{1,2,1}]]"),
+    ("canonical-microstate-entropy", "Entropy[Canon[{0,1,2},0,{1,2,1}]]"),
+    ("canonical-level-entropy", "Entropy[Dist[Canon[{0,1,2},0,{1,2,1}]]]"),
+    ("canonical-ground-limit", "Energy[Canon[{2,3},Infinity]]"),
+    ("canonical-hot-heat-capacity", "HeatCapacity[Canon[{0,1},0]]"),
+    ("canonical-partition", "Exp[LogZ[Canon[{0,1},Log[2]]]]"),
     ("binomial-mean", "Mean[BinomialDistribution[10,1/3]]"),
     ("poisson-point-mass", "Probability[x==0,{x,PoissonDistribution[0]}]"),
     ("normal-cdf", "CDF[NormalDistribution[0,1],0]"),
@@ -98,6 +106,14 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    "Probabilities[Canon[{0,1,2},Log[2],{1,2,1}]]": ("list", "{(4/9),(4/9),(1/9)}"),
+    "Energy[Canon[{0,1,2},Log[2],{1,2,1}]]": ("expression", "2/3"),
+    "Variance[Canon[{0,1,2},Log[2],{1,2,1}]]": ("expression", "4/9"),
+    "Entropy[Canon[{0,1,2},0,{1,2,1}]]": ("expression", "log(4)"),
+    "Entropy[Dist[Canon[{0,1,2},0,{1,2,1}]]]": ("expression", "3*log(2)/2"),
+    "Energy[Canon[{2,3},Infinity]]": ("expression", "2"),
+    "HeatCapacity[Canon[{0,1},0]]": ("expression", "0"),
+    "Exp[LogZ[Canon[{0,1},Log[2]]]]": ("expression", "3/2"),
     "Mean[BinomialDistribution[10,1/3]]": ("expression", "10/3"),
     "Probability[x==0,{x,PoissonDistribution[0]}]": ("expression", "1"),
     "CDF[NormalDistribution[0,1],0]": ("expression", "1/2"),

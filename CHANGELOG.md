@@ -1,5 +1,29 @@
 # Versiones / Releases
 
+## 0.2.0.dev10 — Sin publicar / Unreleased
+
+### Español
+
+- Primer bloque de física estadística: `Canon`, `LogZ`, `Energy`, `FreeEnergy`,
+  `HeatCapacity`, `Levels`, `Degens` y `Dist`. Probabilidades de nivel,
+  varianza energética y entropía de microestados con degeneración explícita.
+- Modelos simbólicos y numéricos, beta firmado y límites de beta infinita.
+  Cálculo desplazado de exponenciales, sin descartar colas pequeñas; invariancia
+  ante cambios del cero de energía y condiciones conservadas en las sesiones.
+- Persistencia de datos y precisión sin ejecutar fuente ni calcular consultas
+  al cargar. La etapa 6 sigue abierta: MaxEnt y entropías generalizadas pendientes.
+
+### English
+
+- First statistical-physics block: `Canon`, `LogZ`, `Energy`, `FreeEnergy`,
+  `HeatCapacity`, `Levels`, `Degens` and `Dist`. Level probabilities, energy
+  variance and microstate entropy with explicit degeneracy counts.
+- Symbolic and numerical models, signed beta and infinite-beta limits.
+  Shifted exponential evaluation retains small tails; energy-zero invariance
+  and executable conditions survive session storage.
+- Models and precision load as data, without source execution or query
+  computation. Stage 6 remains open: MaxEnt and generalized entropies are pending.
+
 ## 0.2.0.dev9 — Sin publicar / Unreleased
 
 ### Español

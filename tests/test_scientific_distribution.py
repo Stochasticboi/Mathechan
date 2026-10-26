@@ -25,6 +25,14 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        "Probabilities[Canon[{0,1,2},Log[2],{1,2,1}]]": {"kind":"list", "text":"{(4/9),(4/9),(1/9)}"},
+        "Energy[Canon[{0,1,2},Log[2],{1,2,1}]]": {"kind":"expression", "text":"2/3"},
+        "Variance[Canon[{0,1,2},Log[2],{1,2,1}]]": {"kind":"expression", "text":"4/9"},
+        "Entropy[Canon[{0,1,2},0,{1,2,1}]]": {"kind":"expression", "text":"log(4)"},
+        "Entropy[Dist[Canon[{0,1,2},0,{1,2,1}]]]": {"kind":"expression", "text":"3*log(2)/2"},
+        "Energy[Canon[{2,3},Infinity]]": {"kind":"expression", "text":"2"},
+        "HeatCapacity[Canon[{0,1},0]]": {"kind":"expression", "text":"0"},
+        "Exp[LogZ[Canon[{0,1},Log[2]]]]": {"kind":"expression", "text":"3/2"},
         "Mean[BinomialDistribution[10,1/3]]": {"kind":"expression", "text":"10/3"},
         "Probability[x==0,{x,PoissonDistribution[0]}]": {"kind":"expression", "text":"1"},
         "CDF[NormalDistribution[0,1],0]": {"kind":"expression", "text":"1/2"},
@@ -166,7 +174,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 70)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 78)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -280,8 +288,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 74)
-            self.assertEqual(runner.call_count, 74)
+            self.assertEqual(len(checks), 82)
+            self.assertEqual(runner.call_count, 82)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

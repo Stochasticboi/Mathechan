@@ -25,7 +25,7 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev9** adds limits, series, products, mixed
+Development source **0.2.0.dev10** adds limits, series, products, mixed
 derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
 Replacement supports `expr /. x -> value`, rule lists and delayed rules.
 Curvilinear operators use orthonormal components and retain chart conditions;
@@ -50,6 +50,10 @@ Complex algebra for states and operators adds `Conj`, `Re`, `Im`, `Adj`,
 `PSDCheck` and `PTrace`. The `Imag` constant represents the imaginary unit.
 These operations support Bell states, projectors and reduced states of small
 systems, with explicit assumptions and limits.
+Statistical physics starts with `Canon`: finite canonical systems with
+degeneracy, `LogZ`, mean energy, fluctuations, free energy and heat capacity.
+Microstate entropy is distinct from level entropy. Saved models retain their
+parameters and precision. MaxEnt inference remains the next stage 6 block.
 These increments are not in the 0.2.0-dev0 download. See the
 [language reference](docs/en/language.md) for scope and restrictions.
 

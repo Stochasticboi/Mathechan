@@ -2,11 +2,11 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev9 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev10 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
 calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
 dev5–dev6 finite probability, dev7 hyperbolic functions, dev8 complex operations,
-or dev9 probability families and moments. Historical 0.1.1 sections record the scope
+dev9 probability families and moments, or dev10 canonical systems. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -173,6 +173,88 @@ outside a real branch can produce a complex result. Pole requirements do not
 describe every branch cut or certify global differentiability. A primitive
 verified by differentiation is a local branch verification. See the
 [inverse hyperbolic function conventions](https://dlmf.nist.gov/4.37).
+
+## Finite canonical systems: development 0.2.0.dev10
+
+This first stage 6 block implements the canonical ensemble with a fixed spectrum.
+`MaxEnt` inference and generalized entropies remain subsequent blocks.
+`Canon[E,beta]` creates a model, not a fit to prescribed constraints. Energies
+may repeat: entries have distinct identifiers. `Canon[E,beta,g]` supplies
+positive integer degeneracies, one per entry. Without `g`, each entry is one
+microstate. Counts are not a normalized prior: the physical partition function
+is `Z=Sum[g_i*Exp[-beta*E_i]]`.
+
+| Query | Meaning |
+|---|---|
+| `Probabilities[r]` | Probabilities of level groups, in declared order. |
+| `Dist[r]` | Distribution over indices `1,...,n`, not over energy values. |
+| `LogZ[r]` | Logarithm of the physical partition function; obtain `Z` with `Exp[LogZ[r]]`. |
+| `Energy[r]` | Mean energy `U`. |
+| `Variance[r]` | Energy variance, not index variance. |
+| `Entropy[r]` | Microstate entropy `S/kB`, including degeneracy. |
+| `FreeEnergy[r]` | Free energy `F=-LogZ[r]/beta`; requires `beta!=0`. |
+| `HeatCapacity[r]` | Reduced heat capacity `C/kB=beta^2*Variance[r]`. |
+| `Levels[r]`, `Degens[r]` | Declared energies and degeneracies. |
+
+Example within one session, with three groups and four microstates:
+
+```wolfram
+r=Canon[{0,1,2},Log[2],{1,2,1}]
+Probabilities[r]
+Energy[r]
+Variance[r]
+Entropy[Canon[{0,1,2},0,{1,2,1}]]
+Entropy[Dist[Canon[{0,1,2},0,{1,2,1}]]]
+```
+
+Results: `{4/9,4/9,1/9}`, `2/3`, `4/9`, `Log[4]` and `3*Log[2]/2`.
+The final query measures level-group entropy, distinct from microstate entropy
+because `S/kB=-Sum[P_i*Log[P_i/g_i]]`.
+
+The convention is `beta=1/(kB*T)`. Entropy and heat capacity are expressed as
+`S/kB` and `C/kB`; energies and `F` use input energy units. There is no automatic
+unit checking. Finite beta must be real and may be zero or negative; a negative
+parameter does not by itself establish a physical negative temperature for a
+truncated spectrum. Beta's symbolic parameters must be independent of energies
+and degeneracies: temperature-dependent spectra are outside this block.
+
+Adding a common energy offset leaves probabilities, entropy and variance
+unchanged, and shifts `U` and `F` by that offset. For a fixed spectrum,
+`U=-D[LogZ,beta]` and `Variance=D[LogZ,{beta,2}]`. Verifying a symbolic identity
+may require additional rewriting or simplification.
+
+`Canon[E,Infinity,g]` and `Canon[E,-Infinity,g]` are exact limits on minimum-
+or maximum-energy groups. Energies must be numerical with decidable ordering.
+Degeneracy determines weights among tied extreme groups. Variance and the
+limit of `C/kB` are zero; residual entropy is the logarithm of their total
+degeneracy. `LogZ` may have no finite value in this limit and that query is
+rejected. `FreeEnergy` at beta zero is rejected even if its formula would
+simplify to a constant.
+
+`N[r,50]` retains the model with requested numerical precision of 50 digits;
+its data must be numerical. The printer uses the explicit four-argument form
+`Canon[E,beta,g,precision]`: zero selects exact or automatic arithmetic, while
+10 through 200 requests numerical evaluation. Numerical `Float` inputs without
+an explicit precision use the lowest input precision within that range.
+With symbolic parameters, stored binary values are treated as exact rationals.
+
+Numerical evaluation uses relative energies and shifted exponentials.
+`Probabilities[r]` displays approximations; `Dist[r]` normalizes stored binary
+weights exactly as rationals. Exact normalization does not certify physical
+probabilities. `exact` describes mathematical representation, not experimental
+uncertainty or a universal error bound. Query diagnostics report method,
+precision and normalization residual.
+
+Saved models retain energies, degeneracies, beta, precision and conditions.
+Loading validates data without executing source or computing observables.
+Explicit queries recompute results; no cached diagnostic is presented as a
+certificate of MaxEnt inference.
+
+Limits: 64 groups, eight symbols, 256 input operations and 4096 output operations;
+rational coefficients up to 12000 bits. Numerical mode limits log-weight spread
+to 6000 and enforces further size budgets. Excessive requests are rejected
+instead of silently dropping small probabilities. A finite system does not
+establish a singular transition in the thermodynamic limit.
 
 ## Probability and moments: development 0.2.0.dev9
 

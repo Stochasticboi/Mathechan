@@ -48,6 +48,9 @@ def probability_call(node, build, restrictions, state, bindings, functions, defi
         return bound_probability_call(node, build, restrictions, state, bindings, functions, definitions)
     arguments = tuple(build(child, restrictions, state, bindings, functions, definitions)
                       for child in node.children)
+    from .canonical import CanonicalState, canonical_operation
+    if arguments and isinstance(arguments[0], CanonicalState):
+        return absorb_probability(canonical_operation(node.value, arguments, state.assumptions), state)
     aliases = {"MomentGeneratingFunction": "MGF", "CharacteristicFunction": "CF"}
     name = aliases.get(node.value, node.value)
     if name in {"MGF", "CF", "Moment", "CentralMoment", "Cumulant"}:

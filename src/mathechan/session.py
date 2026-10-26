@@ -81,6 +81,9 @@ class Session:
             from .finite_probability import FiniteDistribution
             from .joint_probability import JointFiniteDistribution
             from .parametric_probability import ParametricDistribution
+            from .canonical import CanonicalState
+            if isinstance(item, CanonicalState):
+                return True  # Its constructor validates the mathematical specification.
             if isinstance(item, ParametricDistribution):
                 return all(supported(child) for child in item.parameters)
             if isinstance(item, (FiniteDistribution, JointFiniteDistribution)):
