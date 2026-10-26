@@ -121,6 +121,13 @@ class Codec:
         return Node(kind, value, tuple(self.ast_decode(child, depth + 1) for child in children))
 
     def encode(self, value, depth=0):
+        from .canonical import CanonicalState
+        if isinstance(value, CanonicalState):
+            self.tick(depth)
+            return {"type": "canonical_state", "energies": self.encode(value.energies, depth + 1),
+                    "beta": self.encode(value.beta, depth + 1),
+                    "degeneracies": self.encode(value.degeneracies, depth + 1),
+                    "precision": value.precision}
         from .parametric_probability import ParametricDistribution
         if isinstance(value, ParametricDistribution):
             self.tick(depth)
@@ -188,6 +195,13 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "canonical_state":
+            from .canonical import CanonicalState
+            _keys(data, ("type", "energies", "beta", "degeneracies", "precision"))
+            precision = _integer(data["precision"], 0, 200)
+            return CanonicalState(self.decode(data["energies"], depth + 1),
+                                  self.decode(data["beta"], depth + 1),
+                                  self.decode(data["degeneracies"], depth + 1), precision)
         if kind == "parametric_distribution":
             from .parametric_probability import ParametricDistribution
             _keys(data, ("type", "family", "parameters"))

@@ -67,7 +67,13 @@ def _write(expression, depth):
     from .finite_probability import FiniteDistribution
     from .joint_probability import JointFiniteDistribution
     from .parametric_probability import ParametricDistribution
-    if isinstance(expression, ParametricDistribution):
+    from .canonical import CanonicalState
+    if isinstance(expression, CanonicalState):
+        beta = ("Infinity" if expression.beta is sp.oo else
+                "(-Infinity)" if expression.beta is -sp.oo else write(expression.beta))
+        result = ("Canon[" + write(expression.energies) + "," + beta + ","
+                  + write(expression.degeneracies) + "," + str(expression.precision) + "]")
+    elif isinstance(expression, ParametricDistribution):
         result = expression.family + "[" + ",".join(write(item) for item in expression.parameters) + "]"
     elif isinstance(expression, JointFiniteDistribution):
         result = "JointFiniteDistribution[" + write(expression.states) + "," + write(expression.probabilities) + "]"

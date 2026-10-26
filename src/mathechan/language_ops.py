@@ -7,10 +7,11 @@ import sympy as sp
 from .matrix_language import LINEAR_CALLS
 from .probability_language import PROBABILITY_CALLS
 from .quantum_language import QUANTUM_CALLS
+from .canonical_language import CANONICAL_CALLS
 
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | CANONICAL_CALLS | frozenset(
     {
         "N",
         "If",
@@ -328,6 +329,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in CANONICAL_CALLS:
+        from .canonical_language import canonical_call
+        return canonical_call(node, build, restrictions, state, bindings, functions, definitions)
     if name in QUANTUM_CALLS:
         from .quantum_language import quantum_call
         return quantum_call(node, build, restrictions, state, bindings, functions, definitions)
@@ -459,6 +463,10 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
             read(node.children[1]) if len(node.children) == 2 else sp.Integer(15)
         )
         expression = read(node.children[0])
+        from .canonical import CanonicalState, canonical_operation
+        if isinstance(expression, CanonicalState):
+            from .probability_language import absorb_probability
+            return absorb_probability(canonical_operation("N", (expression, precision), state.assumptions), state)
         if isinstance(expression, (sp.MatrixBase, sp.Tuple)):
             from .matrix_language import numerical_container
             value = numerical_container(expression, precision)

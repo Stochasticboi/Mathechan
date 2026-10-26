@@ -2,12 +2,12 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev9**. La descarga publicada
+Este documento describe el código **0.2.0.dev10**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
 de dev3, el álgebra lineal de dev4, la probabilidad finita de dev5–dev6 ni las
 hiperbólicas de dev7, las operaciones complejas de dev8 ni las familias y
-momentos probabilísticos de dev9. Las subsecciones
+momentos probabilísticos de dev9 ni los sistemas canónicos de dev10. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -177,6 +177,88 @@ Las condiciones de polos no describen todos los cortes ni certifican
 diferenciabilidad global. Una primitiva verificada por derivación es una
 verificación local en su rama. Véanse las
 [convenciones de funciones hiperbólicas inversas](https://dlmf.nist.gov/4.37).
+
+## Sistemas canónicos finitos: desarrollo 0.2.0.dev10
+
+Este primer bloque de la etapa 6 implementa el ensamble canónico con espectro
+fijo. La inferencia `MaxEnt` y las entropías generalizadas quedan para los
+bloques siguientes. `Canon[E,beta]` crea un modelo, no un ajuste de restricciones.
+Las energías pueden repetirse; cada entrada tiene un identificador distinto.
+`Canon[E,beta,g]` declara degeneraciones enteras positivas, una por entrada.
+Sin `g`, cada entrada representa un microestado. Los conteos no son un prior
+normalizado: la partición física es `Z=Sum[g_i*Exp[-beta*E_i]]`.
+
+| Consulta | Significado |
+|---|---|
+| `Probabilities[r]` | Probabilidades de los grupos de nivel, en el orden declarado. |
+| `Dist[r]` | Distribución sobre índices `1,...,n`; sus estados no son las energías. |
+| `LogZ[r]` | Logaritmo de la partición física. Para obtener `Z`, usar `Exp[LogZ[r]]`. |
+| `Energy[r]` | Energía media `U`. |
+| `Variance[r]` | Varianza de la energía, no de los índices. |
+| `Entropy[r]` | Entropía de microestados `S/kB`, incluida la degeneración. |
+| `FreeEnergy[r]` | Energía libre `F=-LogZ[r]/beta`; requiere `beta!=0`. |
+| `HeatCapacity[r]` | Capacidad calorífica reducida `C/kB=beta^2*Variance[r]`. |
+| `Levels[r]`, `Degens[r]` | Energías y degeneraciones declaradas. |
+
+Ejemplo en una sesión, con tres grupos y cuatro microestados:
+
+```wolfram
+r=Canon[{0,1,2},Log[2],{1,2,1}]
+Probabilities[r]
+Energy[r]
+Variance[r]
+Entropy[Canon[{0,1,2},0,{1,2,1}]]
+Entropy[Dist[Canon[{0,1,2},0,{1,2,1}]]]
+```
+
+Resultados: `{4/9,4/9,1/9}`, `2/3`, `4/9`, `Log[4]` y `3*Log[2]/2`.
+La última consulta mide entropía de grupos de nivel; difiere de la de
+microestados porque `S/kB=-Sum[P_i*Log[P_i/g_i]]`.
+
+La convención es `beta=1/(kB*T)`. Se muestran `S/kB` y `C/kB`; las energías
+y `F` usan las unidades de entrada. No hay comprobación automática de unidades.
+Beta finito debe ser real y puede ser cero o negativo. Esto no atribuye por sí
+solo una temperatura física negativa a un espectro truncado. Los parámetros
+simbólicos de beta deben ser independientes de las energías y degeneraciones:
+este bloque no trata espectros dependientes de temperatura.
+
+Sumar una constante a todas las energías conserva probabilidades, entropía y
+varianza, y desplaza `U` y `F` por esa constante. Para espectro fijo,
+`U=-D[LogZ,beta]` y `Variance=D[LogZ,{beta,2}]`. Una salida puede necesitar
+reescritura o simplificación adicional para comprobar una identidad simbólica.
+
+`Canon[E,Infinity,g]` y `Canon[E,-Infinity,g]` representan límites exactos
+sobre los grupos de energía mínima o máxima. Requieren energías numéricas
+cuyo orden se pueda decidir. La degeneración decide los pesos entre grupos
+extremos empatados. La varianza y el límite de `C/kB` son cero; la entropía
+residual es el logaritmo de la degeneración total extrema. `LogZ` puede no
+tener valor finito en ese límite; esa consulta se rechaza. `FreeEnergy` en
+beta cero se rechaza incluso si su fórmula se simplificaría a una constante.
+
+`N[r,50]` conserva el modelo con precisión numérica solicitada de 50 cifras;
+los datos deben ser numéricos. `Canon[E,beta,g,precision]` es la forma explícita
+de cuatro argumentos usada por el impresor: cero selecciona cálculo exacto o
+automático, y de 10 a 200 solicita cálculo numérico. Los datos `Float` numéricos
+sin precisión explícita usan la menor precisión de entrada dentro de ese rango.
+Con parámetros simbólicos, sus valores binarios se usan como racionales exactos.
+
+La evaluación numérica usa energías relativas y exponenciales desplazadas.
+`Probabilities[r]` muestra aproximaciones; `Dist[r]` normaliza exactamente los
+pesos binarios almacenados como racionales. Esta normalización no certifica
+las probabilidades físicas. `exact` describe representación matemática, no
+incertidumbre experimental ni una cota universal de error. Los diagnósticos
+numéricos de cada consulta indican método, precisión y residuo de normalización.
+
+Guardar conserva datos del modelo, degeneraciones, beta, precisión y condiciones.
+Cargar valida esos datos sin ejecutar fuente ni calcular observables. Las
+consultas explícitas vuelven a calcular sus resultados; no se guarda una caché
+de diagnósticos como si fuera un certificado de inferencia MaxEnt.
+
+Límites: hasta 64 grupos, ocho símbolos, 256 operaciones de entrada y 4096
+de salida; coeficientes racionales de hasta 12000 bits. El modo numérico limita
+la dispersión de log-pesos a 6000 y aplica presupuestos adicionales de tamaño.
+Si se exceden, rechaza el cálculo en lugar de eliminar probabilidades pequeñas.
+Un sistema finito no demuestra una transición singular en el límite termodinámico.
 
 ## Probabilidad y momentos: desarrollo 0.2.0.dev9
 
