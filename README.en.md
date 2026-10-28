@@ -1,143 +1,78 @@
 # Mathechan
 
-[Español](README.md)
+**Symbolic and numerical computing for theoretical and statistical physics.**
 
-A personal project by **Edward Larroza H., a doctoral student in Physics**.
+[Español](README.md) · [Download](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0) · [Language](docs/en/language.md) · [Release notes](CHANGELOG.md)
 
-Mathechan is an open-source program under development for theoretical physics,
-with a particular interest in statistical physics. Its goal is to bring
-symbolic computation, numerical methods, plots, and reproducible notebooks
-together in a desktop application.
+An open-source project by **Edward Larroza H., a doctoral student in Physics**.
+Started in October 2026 to bring computation, plots and notebooks together in
+a desktop application. It currently runs in a console; the graphical interface
+is pending.
 
-The project began on **18 October 2026**, with an initial five-year horizon
-through October 2031. Its syntax takes Mathematica as a reference, with its
-own specification and a scope developed incrementally.
+## Try Mathechan
 
-## Preview version 0.2.0.dev0
+| Option | Version | How to get it |
+| --- | --- | --- |
+| Windows x64 console | 0.2.0-dev0 · preview | [Download ZIP](https://github.com/Stochasticboi/Mathechan/releases/download/v0.2.0-dev0/Mathechan-0.2.0-dev0-windows-x64.zip), extract it and open `Mathechan.exe`. |
+| Development source | **0.2.0.dev11** | Use the [`main`](https://github.com/Stochasticboi/Mathechan/tree/main) branch with Python 3.11 or later. |
 
-The current source includes persistent sessions, immediate and deferred symbolic
-definitions, functions with local parameters, assumptions, `FullSimplify`,
-`Collect`, `Apart`, algebraic systems, and `NSolve`. `AnalyzeDomain`, `Reduce`,
-and `CertifiedN` expose bounded analyses with explicit conditions and limits.
-See the [language reference](docs/en/language.md) for syntax and verified scope.
-These functions are included in the [0.2.0-dev0 preview release](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
-Earlier downloads retain their original scope.
-
-## Further development
-
-Development source **0.2.0.dev11** adds limits, series, products, mixed
-derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
-Replacement supports `expr /. x -> value`, rule lists and delayed rules.
-Curvilinear operators use orthonormal components and retain chart conditions;
-the Jacobian distinguishes component derivatives from the geometric vector gradient.
-It includes dense linear algebra: matrix arithmetic, `Dot`/`A.B`, determinants,
-inverses, rank, linear systems, eigenvalues, eigenvectors, matrix powers and
-matrix exponentials. `N` accepts numerical matrices and lists.
-Finite discrete probability is available through distributions and explicit
-weight normalization, Bernoulli and discrete uniform constructors, event
-probabilities, expectation, variance, standard deviation and entropy, with
-requirements retained in sessions.
-It supports finite joint tables, marginalization, event conditioning, and
-covariance/correlation of real observables.
-Probability also includes binomial, Poisson, normal, exponential and gamma
-families, with `PDF`, `CDF`, `MGF`, `CF`, moments and cumulants. Conditional
-expectations and multivariate transforms for finite joint tables retain
-explicit parameter and convergence conditions.
-The six hyperbolic functions and their inverses support differentiation,
-integration, numerical evaluation and persistent pole exclusions.
-Complex algebra for states and operators adds `Conj`, `Re`, `Im`, `Adj`,
-`Inner`, `Norm`, `Unit`, `Dyad`, `Proj`, `Kron`, `Ortho`, `HermQ`, `UnitaryQ`,
-`PSDCheck` and `PTrace`. The `Imag` constant represents the imaginary unit.
-These operations support Bell states, projectors and reduced states of small
-systems, with explicit assumptions and limits.
-Statistical physics starts with `Canon`: finite canonical systems with
-degeneracy, `LogZ`, mean energy, fluctuations, free energy and heat capacity.
-Microstate entropy is distinct from level entropy. Saved models retain their
-parameters and precision. Finite `MaxEnt` inference maximizes Shannon entropy or minimizes KL relative
-to a reference, with prescribed means, active support and diagnostics. It handles
-redundant constraints and boundary solutions, and saves validated results in
-sessions. Generalized entropies remain pending.
-These increments are not in the 0.2.0-dev0 download. See the
-[language reference](docs/en/language.md) for scope and restrictions.
-
-## Experimental console
-
-The published version runs **from the command line**, using a restricted parser
-and SymPy 1.14 for evaluation. It does not yet have a graphical interface.
-
-- Exact arithmetic, including decimals interpreted as rational numbers.
-- Functions `Sin`, `Cos`, `Exp`, `Log`, and `Sqrt`.
-- `Expand`, `Simplify`, and differentiation with `D`.
-- Univariate plots with `Plot` and SVG export.
-- Reading and writing JSON `.mchan` notebooks, without execution on opening.
-
-`Plot` uses 201 uniformly spaced samples: it may miss singularities between
-samples and does not provide adaptive sampling. Notebooks store text results;
-plots are exported separately. General Wolfram Language compatibility and
-validation for general scientific use are not claimed.
-
-## Scientific operations in 0.1.1
-
-Version 0.1.1 extends the console with `N`, `Factor`, `Together`,
-`Cancel`, `Substitute`, finite `Sum`, `Integrate`, `Solve`, and `DSolve`. It adds
-lists, `==` equalities, and metadata distinguishing approximation, conditions,
-and unresolved results. `N[Pi,50]` requests 50 digits;
-`Sum[n^2,{n,1,10}]` returns 385.
-
-These are bounded implementations: rational algebra over Q, linear algebraic
-systems, and ODEs for one dependent function of order 1 or 2. Conditions and
-checks are partial. See [syntax and limits](docs/en/language.md) and the
-[example without precomputed results](examples/scientific.mchan).
-
-These functions belong to **0.1.1**; the earlier 0.1.0 ZIP retains its original
-scope. The graphical interface and dedicated statistical physics tools remain
-pending. See the [0.1.1 release notes](docs/en/releases/0.1.1.md).
-
-The 0.2.0.dev0 console maintains a session with definitions and assumptions.
-The individual evaluation API remains stateless. See
-[the language](docs/en/language.md) for scope.
-
-## Downloads and source code
-
-Published versions and their files are available in
-[Releases](https://github.com/Stochasticboi/Mathechan/releases/tag/v0.2.0-dev0).
-For Windows x64, download the
-[ZIP archive](https://github.com/Stochasticboi/Mathechan/releases/download/v0.2.0-dev0/Mathechan-0.2.0-dev0-windows-x64.zip),
-extract it and open `Mathechan.exe`. It opens an interactive console.
-The graphical interface is still under development. Release notes describe
-source code, SHA-256 checksums and checks performed.
-
-Installation from source requires Python 3.11 or later. From the repository
-directory, preferably in a virtual environment:
+The ZIP contains **dev0** features. For later additions, including MaxEnt,
+install from source:
 
 ```console
 python -m pip install -e .
-python -m mathechan "D[x^3, x]"
-python -m mathechan "Plot[Exp[-x^2], {x, -3, 3}]" --output gaussian.svg
+python -m mathechan "D[x^3,x]"
 ```
 
-The first evaluation returns `3*x**2`. The second creates an SVG file.
+Run these commands from the repository directory. The second line returns
+`3*x**2`. Program modules live in [`src/mathechan`](src/mathechan).
 
-## Documentation
+## Project timeline
 
-- [Objectives and development horizon, 2026–2031](docs/en/objectives.md).
-- [Project history and background](docs/en/history.md).
-- [Comparison with Mathematica](docs/en/comparison.md).
-- [Experimental language](docs/en/language.md).
-- [Version 0.1.1 release notes](docs/en/releases/0.1.1.md).
-- [Sources](docs/SOURCES.md).
-- [Contributing](CONTRIBUTING.md).
+Each row describes what was added to the preceding version. Details and fixes
+are recorded in the [changelog](CHANGELOG.md).
 
-Documentation is included in the repository and can be downloaded with the
-source code. It distinguishes implemented functions, current limitations,
-and development objectives.
+| Version | What it added |
+| --- | --- |
+| **0.1.0** · 18 Oct 2026 | First kernel: exact arithmetic, symbolic expressions, differentiation, simplification, SVG plots and JSON notebooks. |
+| **0.1.1** · 19 Oct 2026 | Numerical evaluation, factoring, rational expressions, substitution, finite sums, integration, equations and ODEs. |
+| **0.2.0.dev0** · 22 Oct 2026 | Persistent sessions, definitions and functions, assumptions, extended algebra and nonlinear systems. **Current downloadable version.** |
+| **0.2.0.dev1** | Real two-sided and one-sided limits; distinct convergent, divergent and unresolved results. |
+| **0.2.0.dev2** | `/.`, `->` and `:>` rules, series, mixed derivatives, products, Cartesian vector calculus and iterated integrals. |
+| **0.2.0.dev3** | Vector calculus in cylindrical and spherical coordinates. |
+| **0.2.0.dev4** | Matrix arithmetic, rank, linear systems, eigenvalues, eigenvectors and matrix exponentials. |
+| **0.2.0.dev5** | Finite discrete probability: distributions, events, expectation, variance and entropy. |
+| **0.2.0.dev6** | Joint distributions, marginals, conditioning, covariance and correlation. |
+| **0.2.0.dev7** | Hyperbolic functions and their inverses, with differentiation and integration. |
+| **0.2.0.dev8** | Complex algebra for small quantum systems: adjoints, tensor products, projectors and partial traces. |
+| **0.2.0.dev9** | Binomial, Poisson, normal, exponential and gamma families; densities, cumulative distributions, generating functions, moments and cumulants. |
+| **0.2.0.dev10** | Finite canonical ensembles: degeneracy, mean energy, fluctuations, free energy and heat capacity. |
+| **0.2.0.dev11** · current | Finite MaxEnt inference: Shannon or KL against a reference, multiple means, active support and saved results. |
 
-## Tests and license
+Versions **dev1–dev11** are integrated into the source; they do not yet have
+separate downloads. See the [language reference](docs/en/language.md) for
+operation syntax and limits.
+
+## Next development
+
+The next statistical-physics block will address generalized entropies:
+Rényi, Tsallis and the q-exponential. The desktop interface and notebook editor
+are part of the [2026–2031 plan](docs/en/objectives.md).
+
+## Documentation and contributions
+
+- [Syntax, examples and limits](docs/en/language.md).
+- [History and background](docs/en/history.md) · [Comparison with Mathematica](docs/en/comparison.md).
+- [Contributing](CONTRIBUTING.md) · [Sources](docs/SOURCES.md).
+
+The kernel uses SymPy 1.14. Its syntax takes Wolfram Language as a reference,
+with its own specification and no general compatibility. Current plots use
+fixed sampling; notebooks do not execute code when opened.
+
+To run the tests from the repository:
 
 ```console
 python -m unittest discover -s tests -v
 ```
 
-Mathechan is licensed under **GPL-3.0-or-later**; see [LICENSE](LICENSE).
-Dependencies retain their own licenses. Mathematica and Wolfram Language are
-technical references; Mathechan is independent of Wolfram Research.
+**GPL-3.0-or-later** · [License](LICENSE). Independent of Wolfram Research.
