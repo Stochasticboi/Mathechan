@@ -29,6 +29,7 @@ CONSTRUCTORS = {
     "erf": sp.erf, "lowergamma": sp.lowergamma, "uppergamma": sp.uppergamma,
     "polygamma": sp.polygamma, "factorial": sp.factorial, "binomial": sp.binomial,
     "loggamma": sp.loggamma,
+    "Max": sp.Max,
     "floor": sp.floor, "ceiling": sp.ceiling,
     "Equality": sp.Eq, "Unequality": sp.Ne, "StrictGreaterThan": sp.Gt,
     "GreaterThan": sp.Ge, "StrictLessThan": sp.Lt, "LessThan": sp.Le,
@@ -368,7 +369,8 @@ class Codec:
             return {"kind": "stored", "value": self.encode(value.value),
                     "restrictions": [self.encode(item) for item in value.restrictions],
                     "requirements": [self.encode(item) for item in value.requirements],
-                    "warnings": list(value.warnings)}
+                    "warnings": list(value.warnings),
+                    **({"approximate": True} if value.approximate else {})}
         if isinstance(value, UserFunction):
             return {"kind": "function", "parameters": [self.encode(item) for item in value.parameters],
                     "names": list(value.names), "body": self.definition_encode(value.body)}
@@ -386,7 +388,11 @@ class Codec:
             raise ValueError("Definición serializada inválida.")
         kind = data["kind"]
         if kind == "stored":
-            _keys(data, ("kind", "value", "restrictions", "requirements", "warnings"))
+            fields = ("kind", "value", "restrictions", "requirements", "warnings")
+            _keys(data, (*fields, "approximate") if "approximate" in data else fields)
+            approximate = data.get("approximate", False)
+            if type(approximate) is not bool:
+                raise ValueError("La procedencia aproximada requiere un booleano.")
             for name in ("restrictions", "requirements", "warnings"):
                 if not isinstance(data[name], list) or len(data[name]) > 256:
                     raise ValueError("Metadatos de definición inválidos.")
@@ -406,7 +412,7 @@ class Codec:
             capture = {"restrictions": restrictions, "requirements": requirements}
             snapshot = Session._snapshot(value, EvaluationResult("expression", "", status="conditional"
                                         if restrictions or requirements else "evaluated"), capture)
-            return StoredDefinition(snapshot.value, restrictions, requirements, tuple(data["warnings"]))
+            return StoredDefinition(snapshot.value, restrictions, requirements, tuple(data["warnings"]), approximate)
         if kind == "deferred":
             _keys(data, ("kind", "node"))
             node = self.ast_decode(data["node"])

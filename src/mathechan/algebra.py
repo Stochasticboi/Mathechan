@@ -202,6 +202,17 @@ def substitute_expression(expression, symbol, value):
     if not isinstance(symbol, sp.Symbol) or symbol.is_commutative is not True:
         raise ValueError("Substitute requiere un símbolo escalar como variable.")
     value = _scalar(value)
+    # Check inner powers first, before SymPy can materialize large rational
+    # powers while specializing the outer expression.
+    for power in sorted(expression.atoms(sp.Pow), key=sp.count_ops):
+        exponent = power.exp.subs(symbol, value, simultaneous=True)
+        if exponent.is_number and (exponent.is_real is not True or abs(exponent) > 1000):
+            raise ValueError("La potencia sustituida excede el límite experimental ±1000.")
+        base = power.base.subs(symbol, value, simultaneous=True)
+        if isinstance(base, sp.Rational) and isinstance(exponent, sp.Rational):
+            bits = max(abs(int(base.p)).bit_length(), int(base.q).bit_length())
+            if base not in (0, 1, -1) and bits*abs(int(exponent.p)) > 12000:
+                raise ValueError("La potencia sustituida excede 12000 bits estimados.")
     result = expression.subs(symbol, value, simultaneous=True)
     if result.has(sp.Integral) and result != expression:
         result = result.doit()

@@ -38,11 +38,13 @@ each stage.
 
 Version 0.1.0 is a command-line prototype with exact arithmetic, a restricted
 set of symbolic functions, differentiation, SVG plots, and `.mchan` files.
-The desktop interface and specialized tools remain to be developed. See
+That version had no graphical interface or dedicated statistical-physics tools. See
 [the comparison](comparison.md) for the distinction between available and
 planned capabilities.
 
-A future first scientific workflow will define a finite discrete system,
-normalize its probabilities, compute observables, and plot their dependence
-on a parameter. This is a development objective; the current prototype does
-not implement it as a specialized tool.
+Current source completes the finite statistical-physics stage with canonical
+ensembles, Shannon/KL inference and Rényi/Tsallis functionals, including support,
+conditions and stored results. Continuous extensions, MaxCal, generalized-entropy
+inference and quantum thermal ensembles require further work. See the
+[language](language.md) for limits and the [timeline](../../README.en.md) to
+distinguish source code from downloads.

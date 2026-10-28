@@ -9,10 +9,11 @@ from .probability_language import PROBABILITY_CALLS
 from .quantum_language import QUANTUM_CALLS
 from .canonical_language import CANONICAL_CALLS
 from .maxent_language import MAXENT_CALLS
+from .generalized_language import GENERALIZED_CALLS
 
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | CANONICAL_CALLS | MAXENT_CALLS | frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | CANONICAL_CALLS | MAXENT_CALLS | GENERALIZED_CALLS | frozenset(
     {
         "N",
         "If",
@@ -55,6 +56,8 @@ class EvaluationState:
     assumptions: object = sp.true
     call_depth: int = 0
     steps: int = 0
+    approximate_inputs: bool = False
+    extended_positive_infinity: bool = False
 
     def mark_status(self, status):
         priority = {
@@ -72,6 +75,10 @@ class EvaluationState:
             self.status = status
 
     def absorb(self, outcome):
+        self.approximate_inputs |= (outcome.details.get("input_approximate") is True
+                                    or outcome.value.has(sp.Float))
+        self.extended_positive_infinity |= (
+            outcome.details.get("operation") == "KL" and outcome.value.has(sp.oo))
         self.mark_status(outcome.status)
         self.warnings.extend(outcome.warnings)
         self.conditions.extend(outcome.conditions)
@@ -330,6 +337,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in GENERALIZED_CALLS:
+        from .generalized_language import generalized_call
+        return generalized_call(node, build, restrictions, state, bindings, functions, definitions)
     if name in MAXENT_CALLS:
         from .maxent_language import maxent_call
         return maxent_call(node, build, restrictions, state, bindings, functions, definitions)
@@ -497,6 +507,8 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
                  definition_scope=shadowed_definitions(symbol))
         )
         state.sum_terms = child_state.sum_terms
+        state.approximate_inputs |= child_state.approximate_inputs
+        state.extended_positive_infinity |= child_state.extended_positive_infinity
         state.steps = child_state.steps
         replacement = scalar(read(node.children[2]))
         result = algebra.substitute_expression(expression, symbol, replacement)

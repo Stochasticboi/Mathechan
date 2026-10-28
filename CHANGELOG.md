@@ -1,5 +1,35 @@
 # Versiones / Releases
 
+## 0.2.0.dev12 — Sin publicar / Unreleased
+
+### Español
+
+- `Renyi[d,a]`, `Tsallis[d,q]`, `KL[p,q]` y `Escort[d,q]` para distribuciones
+  finitas y conjuntas. Órdenes cero, uno e infinito de Rényi, soporte efectivo
+  y alineación de KL por etiquetas. Logaritmos naturales; Tsallis representa S_q/kB.
+- `QExp[x,q]` y `QLog[x,q]`, límite ordinario q=1, corte para q<1 y dominio
+  positivo explícito para q>1. Evaluación con cifras de guarda cerca de q=1.
+- Resultados finitos guardables sin ejecutar fuente al cargar. La procedencia
+  aproximada se conserva incluso al normalizar probabilidades como racionales.
+  Presupuestos de potencia se comprueban antes de construir números enormes.
+- Cierra 6A–6C para física estadística finita: canónica, inferencia Shannon/KL
+  y funcionales generalizados. Inferencia Rényi/Tsallis, MaxCal, modelos
+  continuos y cuánticos térmicos quedan como extensiones. No cambia la descarga dev0.
+
+### English
+
+- `Renyi[d,a]`, `Tsallis[d,q]`, `KL[p,q]` and `Escort[d,q]` for finite and
+  joint distributions. Rényi orders zero, one and infinity, effective support
+  and label-aligned KL. Natural logarithms; Tsallis returns S_q/kB.
+- `QExp[x,q]` and `QLog[x,q]`, the ordinary q=1 limit, a cutoff for q<1 and
+  an explicit positive-base domain for q>1. Guard digits near q=1.
+- Finite results load without source execution. Approximation provenance
+  survives normalization to rational probabilities. Power budgets are checked
+  before constructing huge numbers.
+- Completes finite statistical physics 6A–6C: canonical ensembles, Shannon/KL
+  inference and generalized functionals. Rényi/Tsallis inference, MaxCal,
+  continuous and quantum thermal models remain extensions. The dev0 download is unchanged.
+
 ## 0.2.0.dev11 — Sin publicar / Unreleased
 
 ### Español

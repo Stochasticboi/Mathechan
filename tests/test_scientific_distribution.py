@@ -25,6 +25,15 @@ SPECIFICATION.loader.exec_module(smoke)
 def references():
     """Known algebraic identities, finite sum, polynomial integral, and decay."""
     results = {
+        'Renyi[BernoulliDistribution[1/2],2]': {'kind': 'expression', 'text': 'log(2)'},
+        'Tsallis[BernoulliDistribution[1/2],2]': {'kind': 'expression', 'text': '1/2'},
+        'KL[FiniteDistribution[{0,1},{1/4,3/4}],FiniteDistribution[{1,0},{3/4,1/4}]]': {'kind': 'expression', 'text': '0'},
+        'Probabilities[Escort[FiniteDistribution[{0,1},{1/4,3/4}],2]]': {'kind': 'list', 'text': '{(1/10),(9/10)}'},
+        'QExp[2,1/2]': {'kind': 'expression', 'text': '4'},
+        'QLog[4,1/2]': {'kind': 'expression', 'text': '2'},
+        'Renyi[FiniteDistribution[{0,1},{1,0}],0]': {'kind': 'expression', 'text': '0'},
+        'Tsallis[BernoulliDistribution[1/2],1]': {'kind': 'expression', 'text': 'log(2)'},
+
         'Probabilities[MaxEnt[{0,1},1/4]]': {'kind': 'list', 'text': '{(3/4),(1/4)}'},
         'Dual[MaxEnt[{0,1},1/4]]': {'kind': 'list', 'text': '{Log[3]}'},
         'Residuals[MaxEnt[{0,1},1/4]]': {'kind': 'list', 'text': '{0}'},
@@ -183,7 +192,7 @@ def plot_fixture():
 class ScientificPayloadTests(unittest.TestCase):
     def test_independent_references_and_current_source_satisfy_contract(self):
         fixtures = references()
-        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 86)
+        self.assertEqual(len(smoke.SCIENTIFIC_CASES), 94)
         for _, source in smoke.SCIENTIFIC_CASES:
             with self.subTest(source=source):
                 smoke.check_scientific_payload(source, fixtures[source])
@@ -297,8 +306,8 @@ class ScientificSmokeTests(unittest.TestCase):
                 patch.object(smoke.subprocess, "run", side_effect=run) as runner,
             ):
                 checks = smoke.smoke_test(executable, timeout=7, scientific=True)
-            self.assertEqual(len(checks), 90)
-            self.assertEqual(runner.call_count, 90)
+            self.assertEqual(len(checks), 98)
+            self.assertEqual(runner.call_count, 98)
             self.assertEqual(checks[4:], [label for label, _ in smoke.SCIENTIFIC_CASES])
 
     def test_command_line_option_is_forwarded(self):

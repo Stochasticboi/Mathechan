@@ -11,6 +11,7 @@ class StoredDefinition:
     restrictions: tuple = ()
     requirements: tuple = ()
     warnings: tuple = ()
+    approximate: bool = False
 
 
 @dataclass(frozen=True)
