@@ -1,5 +1,31 @@
 # Versiones / Releases
 
+## 0.2.0.dev11 — Sin publicar / Unreleased
+
+### Español
+
+- `MaxEnt[F,m]` maximiza Shannon; `MaxEnt[F,m,q]` minimiza KL respecto de una
+  referencia normalizada. Admite hasta 32 estados y cuatro observables racionales.
+- Factibilidad y soporte con testigos racionales, restricciones redundantes y
+  soluciones de frontera. Casos exactos y Newton amortiguado para el dual.
+- Consultas de probabilidades, medias, objetivos, residuos y multiplicadores.
+  `Dual` distingue el interior; `FaceDual` describe la cara activa en la frontera.
+- Persistencia de resultados y diagnósticos sin repetir la optimización al cargar.
+  La precisión y la brecha numéricas son estimaciones, no cotas certificadas.
+  Las entropías generalizadas y MaxCal siguen pendientes.
+
+### English
+
+- `MaxEnt[F,m]` maximizes Shannon entropy; `MaxEnt[F,m,q]` minimizes KL against
+  a normalized reference. Supports up to 32 states and four rational observables.
+- Rational feasibility and support witnesses, redundant constraints and boundary
+  solutions. Exact cases and a damped Newton dual solver.
+- Probability, mean, objective, residual and multiplier queries. `Dual` applies
+  in the interior; `FaceDual` describes the active face on a boundary.
+- Results and diagnostics survive session storage without rerunning optimization.
+  Numerical precision and dual gaps are estimates, not certified bounds.
+  Generalized entropies and MaxCal remain pending.
+
 ## 0.2.0.dev10 — Sin publicar / Unreleased
 
 ### Español

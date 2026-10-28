@@ -25,7 +25,7 @@ Earlier downloads retain their original scope.
 
 ## Further development
 
-Development source **0.2.0.dev10** adds limits, series, products, mixed
+Development source **0.2.0.dev11** adds limits, series, products, mixed
 derivatives, Cartesian, cylindrical and spherical vector calculus, and iterated integrals.
 Replacement supports `expr /. x -> value`, rule lists and delayed rules.
 Curvilinear operators use orthonormal components and retain chart conditions;
@@ -53,7 +53,10 @@ systems, with explicit assumptions and limits.
 Statistical physics starts with `Canon`: finite canonical systems with
 degeneracy, `LogZ`, mean energy, fluctuations, free energy and heat capacity.
 Microstate entropy is distinct from level entropy. Saved models retain their
-parameters and precision. MaxEnt inference remains the next stage 6 block.
+parameters and precision. Finite `MaxEnt` inference maximizes Shannon entropy or minimizes KL relative
+to a reference, with prescribed means, active support and diagnostics. It handles
+redundant constraints and boundary solutions, and saves validated results in
+sessions. Generalized entropies remain pending.
 These increments are not in the 0.2.0-dev0 download. See the
 [language reference](docs/en/language.md) for scope and restrictions.
 

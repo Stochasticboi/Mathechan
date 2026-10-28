@@ -8,10 +8,11 @@ from .matrix_language import LINEAR_CALLS
 from .probability_language import PROBABILITY_CALLS
 from .quantum_language import QUANTUM_CALLS
 from .canonical_language import CANONICAL_CALLS
+from .maxent_language import MAXENT_CALLS
 
 from .domains import condition_text, require_nonzero
 
-SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | CANONICAL_CALLS | frozenset(
+SCIENTIFIC_CALLS = LINEAR_CALLS | PROBABILITY_CALLS | QUANTUM_CALLS | CANONICAL_CALLS | MAXENT_CALLS | frozenset(
     {
         "N",
         "If",
@@ -329,6 +330,9 @@ def scientific_call(node, build, restrictions, state, bindings, functions, defin
         return {name: value for name, value in definitions.items() if name not in names}
 
     name = node.value
+    if name in MAXENT_CALLS:
+        from .maxent_language import maxent_call
+        return maxent_call(node, build, restrictions, state, bindings, functions, definitions)
     if name in CANONICAL_CALLS:
         from .canonical_language import canonical_call
         return canonical_call(node, build, restrictions, state, bindings, functions, definitions)

@@ -82,6 +82,9 @@ class Session:
             from .joint_probability import JointFiniteDistribution
             from .parametric_probability import ParametricDistribution
             from .canonical import CanonicalState
+            from .maxent import MaxEntResult
+            if isinstance(item, MaxEntResult):
+                return True
             if isinstance(item, CanonicalState):
                 return True  # Its constructor validates the mathematical specification.
             if isinstance(item, ParametricDistribution):

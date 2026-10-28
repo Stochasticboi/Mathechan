@@ -121,6 +121,13 @@ class Codec:
         return Node(kind, value, tuple(self.ast_decode(child, depth + 1) for child in children))
 
     def encode(self, value, depth=0):
+        from .maxent import MaxEntResult
+        if isinstance(value, MaxEntResult):
+            self.tick(depth)
+            return {"type": "maxent_result",
+                    "data": [self.encode(item, depth+1) for item in value.args[:11]],
+                    "method": value.method, "objective": value.objective,
+                    "input_approximate": value.input_approximate}
         from .canonical import CanonicalState
         if isinstance(value, CanonicalState):
             self.tick(depth)
@@ -195,6 +202,16 @@ class Codec:
         if not isinstance(data, dict) or "type" not in data:
             raise ValueError("Dato matemático de sesión inválido.")
         kind = data["type"]
+        if kind == "maxent_result":
+            from .maxent import MaxEntResult
+            _keys(data, ("type", "data", "method", "objective", "input_approximate"))
+            if (not isinstance(data['data'], list) or len(data['data']) != 11 or
+                    not isinstance(data['method'], str) or not isinstance(data['objective'], str) or
+                    type(data['input_approximate']) is not bool):
+                raise ValueError("Metadatos MaxEnt inválidos.")
+            return MaxEntResult(*(self.decode(item, depth+1) for item in data['data']),
+                                data['method'], data['objective'],
+                                sp.true if data['input_approximate'] else sp.false)
         if kind == "canonical_state":
             from .canonical import CanonicalState
             _keys(data, ("type", "energies", "beta", "degeneracies", "precision"))

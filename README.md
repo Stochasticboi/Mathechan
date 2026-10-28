@@ -25,7 +25,7 @@ Las descargas anteriores conservan su alcance original.
 
 ## Desarrollo posterior
 
-El código en desarrollo **0.2.0.dev10** incorpora límites, series, productos,
+El código en desarrollo **0.2.0.dev11** incorpora límites, series, productos,
 derivadas mixtas, cálculo vectorial cartesiano, cilíndrico y esférico e integrales iteradas.
 La sustitución admite `expr /. x -> valor`, listas de reglas y reglas diferidas.
 Los operadores curvilíneos usan componentes ortonormales y conservan las
@@ -54,7 +54,10 @@ Inicia física estadística con `Canon`: sistemas canónicos finitos con
 degeneración, `LogZ`, energía media, fluctuaciones, energía libre y capacidad
 calorífica. Distingue la entropía de microestados de la entropía de niveles.
 Los modelos conservan sus parámetros y precisión al guardar la sesión.
-La inferencia MaxEnt sigue pendiente del siguiente bloque de la etapa 6.
+Añade inferencia finita con `MaxEnt`: maximización de Shannon o minimización
+de KL respecto de una referencia, medias impuestas, soporte activo y diagnósticos.
+Detecta restricciones redundantes y soluciones de frontera, y conserva el
+resultado validado al guardar la sesión. Las entropías generalizadas siguen pendientes.
 Estos incrementos no están en el descargable 0.2.0-dev0. Véase el
 [lenguaje](docs/es/lenguaje.md) para el alcance y sus restricciones.
 
