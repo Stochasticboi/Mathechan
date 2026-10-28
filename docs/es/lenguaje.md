@@ -1392,7 +1392,8 @@ cifras y el trabajo a 600; las funciones q limitan el trabajo a 2000.
 Los coeficientes exactos del orden y de las funciones q admiten hasta 4096 bits,
 y las potencias se rechazan antes de superar 12000 bits estimados. Esta guardia
 conservadora también limita las potencias de los funcionales aproximados.
-Las sustituciones conservan el límite experimental de exponente ±1000.
+Las sustituciones y los parámetros de funciones definidas conservan el límite
+experimental de exponente ±1000.
 Las probabilidades escort aproximadas se normalizan como racionales almacenados,
 pero su procedencia aproximada se mantiene en consultas y sesiones.
 

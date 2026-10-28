@@ -11,7 +11,8 @@
   positivo explícito para q>1. Evaluación con cifras de guarda cerca de q=1.
 - Resultados finitos guardables sin ejecutar fuente al cargar. La procedencia
   aproximada se conserva incluso al normalizar probabilidades como racionales.
-  Presupuestos de potencia se comprueban antes de construir números enormes.
+  Presupuestos de potencia se comprueban antes de construir números enormes,
+  también al llamar funciones definidas con parámetros.
 - Cierra 6A–6C para física estadística finita: canónica, inferencia Shannon/KL
   y funcionales generalizados. Inferencia Rényi/Tsallis, MaxCal, modelos
   continuos y cuánticos térmicos quedan como extensiones. No cambia la descarga dev0.
@@ -25,7 +26,7 @@
   an explicit positive-base domain for q>1. Guard digits near q=1.
 - Finite results load without source execution. Approximation provenance
   survives normalization to rational probabilities. Power budgets are checked
-  before constructing huge numbers.
+  before constructing huge numbers, including calls to user-defined functions.
 - Completes finite statistical physics 6A–6C: canonical ensembles, Shannon/KL
   inference and generalized functionals. Rényi/Tsallis inference, MaxCal,
   continuous and quantum thermal models remain extensions. The dev0 download is unchanged.

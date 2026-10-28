@@ -1347,7 +1347,8 @@ Functionals cap numerical output at 100 digits and working precision at 600;
 q-functions cap working precision at 2000. Exact order and q-function
 coefficients are limited to 4096 bits; powers are rejected before exceeding
 12000 estimated bits. This conservative guard also limits powers in approximate
-functionals. Substitution retains the experimental ±1000 exponent limit.
+functionals. Substitution and user-function arguments retain the experimental
+±1000 exponent limit.
 Approximate escort probabilities are normalized as stored rationals while
 queries and sessions retain their approximation provenance.
 

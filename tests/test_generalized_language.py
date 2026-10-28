@@ -108,6 +108,16 @@ class GeneralizedLanguageTests(unittest.TestCase):
         self.assertFalse(result.exact)
         self.assertEqual(result.details['requested_significant_digits'], 1)
 
+    def test_user_functions_preserve_power_budgets_and_regular_branches(self):
+        session = Session()
+        session.evaluate('Define[f,{q},Tsallis[BernoulliDistribution[1/2],q]]')
+        with self.assertRaises(MathechanError):
+            session.evaluate('f[10000]')
+        self.assertEqual(session.evaluate('f[2]').text, '1/2')
+        session.evaluate('Define[g,{q},QExp[2,q]]')
+        self.assertEqual(session.evaluate('g[1]').text, 'exp(2)')
+        self.assertEqual(session.evaluate('g[1/2]').text, '4')
+
 
 if __name__ == '__main__':
     unittest.main()

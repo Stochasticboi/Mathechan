@@ -172,6 +172,22 @@ FUNCTIONS = {
 
 def _stored_value(stored, replacements, restrictions, state):
     """Use immutable snapshots while carrying their original domain conditions."""
+    if replacements:
+        # Function arguments specialize stored expressions without re-entering
+        # their original operation. Bound powers before that reconstruction.
+        for power in sorted(stored.value.atoms(sp.Pow), key=sp.count_ops):
+            if not any(power.has(symbol) for symbol in replacements):
+                continue
+            base = power.base.xreplace(replacements)
+            exponent = power.exp.xreplace(replacements)
+            if base in (sp.S.Zero, sp.S.One, -sp.S.One):
+                continue
+            if exponent.is_real is True and exponent.is_finite is True and abs(exponent) > 1000:
+                raise MathechanError("La potencia ligada excede el límite experimental ±1000.")
+            if isinstance(base, sp.Rational) and isinstance(exponent, sp.Rational):
+                bits = max(abs(int(base.p)).bit_length(), int(base.q).bit_length())
+                if bits*abs(int(exponent.p)) > 12000:
+                    raise MathechanError("La potencia ligada excede 12000 bits estimados.")
     value = stored.value.xreplace(replacements)
     state.approximate_inputs |= stored.approximate or value.has(sp.Float)
     from .maxent import MaxEntResult
