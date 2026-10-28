@@ -2,12 +2,12 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev11**. La descarga publicada
+Este documento describe el código **0.2.0.dev12**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
 de dev3, el álgebra lineal de dev4, la probabilidad finita de dev5–dev6 ni las
 hiperbólicas de dev7, las operaciones complejas de dev8 ni las familias y
-momentos probabilísticos de dev9, los sistemas canónicos de dev10 ni MaxEnt de dev11. Las subsecciones
+momentos probabilísticos de dev9, los sistemas canónicos de dev10 ni MaxEnt de dev11 ni las entropías generalizadas de dev12. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -182,7 +182,7 @@ verificación local en su rama. Véanse las
 
 Este primer bloque de la etapa 6 implementa el ensamble canónico con espectro
 fijo. La inferencia finita `MaxEnt` se incorpora en 6B; las entropías
-generalizadas siguen pendientes. `Canon[E,beta]` crea un modelo, no un ajuste de restricciones.
+generalizadas se incorporan en 6C. `Canon[E,beta]` crea un modelo, no un ajuste de restricciones.
 Las energías pueden repetirse; cada entrada tiene un identificador distinto.
 `Canon[E,beta,g]` declara degeneraciones enteras positivas, una por entrada.
 Sin `g`, cada entrada representa un microestado. Los conteos no son un prior
@@ -1326,3 +1326,81 @@ sin ejecutar fuente, programación lineal ni optimización. Esta validación
 aritmética no acredita la autenticidad criptográfica del archivo.
 La etapa 6B cubre espacios finitos; MaxEnt continuo, restricciones con
 incertidumbre, entropías generalizadas y MaxCal quedan fuera de este bloque.
+
+
+## Entropías generalizadas y funciones q: desarrollo 0.2.0.dev12
+
+Este bloque completa la etapa 6 para espacios finitos. Separa calcular un
+funcional de entropía de inferir una distribución óptima: `MaxEnt` conserva
+los objetivos Shannon/KL de 6B. No ofrece optimización Rényi/Tsallis, MaxCal,
+modelos continuos ni ensambles cuánticos térmicos.
+
+| Operación | Definición y dominio |
+| --- | --- |
+| `Renyi[d,a]` | ln(Σ p_i^a)/(1−a), a≥0; a=1 usa Shannon, a=0 cuenta el soporte positivo, a=Infinity usa −ln(max p_i). |
+| `Tsallis[d,q]` | (1−Σ p_i^q)/(q−1), q>0; q=1 usa Shannon. Devuelve S_q/kB, sin multiplicar por una constante física. |
+| `KL[d,r]` | Σ p_i ln(p_i/r_i), dirección d respecto de r; alinea por etiquetas, no por posición. |
+| `Escort[d,q]` | Distribución con las mismas etiquetas y masas p_i^q/Σ p_j^q, q>0. |
+| `QExp[x,q]` | [1+(1−q)x]^(1/(1−q)); q=1 usa Exp[x]. |
+| `QLog[x,q]` | (x^(1−q)−1)/(1−q), x>0; q=1 usa Log[x]. |
+
+`d` y `r` deben ser distribuciones finitas o conjuntas finitas, con hasta 64
+estados y los presupuestos previos de construcción. Los parámetros son reales;
+se admiten símbolos con condiciones guardables. Se usan logaritmos naturales
+(nats para Rényi y KL). Los órdenes negativos no están implementados.
+
+```wolfram
+d = FiniteDistribution[{0,1},{1/4,3/4}]
+Tsallis[d,2]
+(* 3/8 *)
+Probabilities[Escort[d,2]]
+(* {1/10,9/10} *)
+Renyi[BernoulliDistribution[1/2],2]
+(* Log[2] *)
+QExp[2,1/2]
+(* 4 *)
+QLog[4,1/2]
+(* 2 *)
+```
+
+Las masas nulas no contribuyen a Shannon ni a KL; no se evalúa `0 Log[0]`.
+El orden cero de Rényi cuenta estados de masa positiva, no filas declaradas.
+Si p_i>0 pero r_i=0, KL devuelve +Infinity con estado `divergent`. Una
+referencia puede incluir otros estados. Los espacios deben ser de la misma
+clase y dimensión; etiquetas cuya igualdad sea indecidible requieren
+especialización antes del cálculo. Las KL infinitas o simbólicas con ramas
+infinitas se pueden consultar, pero no asignar ni guardar como escalares finitos.
+
+En `QExp`, q<1 incluye el corte: si 1+(1−q)x≤0, devuelve cero. Para q>1
+exige 1+(1−q)x>0; la frontera divergente y valores posteriores producen un
+error de dominio. `QLog` exige x>0. Las derivadas simbólicas por ramas no
+demuestran diferenciabilidad en el punto de corte. Las condiciones se conservan
+al sustituir parámetros; q=1 selecciona la rama ordinaria antes de dividir.
+
+Para medias escort se construye explícitamente la distribución y se usan las
+consultas habituales, por ejemplo `Mean[Escort[d,2]]`. `Mean[d]` sigue siendo
+la media ordinaria: no se cambia silenciosamente la restricción de un modelo.
+Para aplicar estos funcionales a 6A/6B, convertir con `Dist`, por ejemplo
+`Tsallis[Dist[MaxEnt[{0,1},1/4]],2]`. En modelos con degeneración,
+`Dist[Canon[...]]` representa masas de niveles, no una expansión en microestados;
+sus entropías generalizadas de niveles no sustituyen la entropía física de 6A.
+
+Las entradas Float se interpretan por su valor binario almacenado. Cerca del
+orden uno, la evaluación usa cifras de guarda; no certifica dígitos ni
+incertidumbre experimental. Los funcionales limitan la salida numérica a 100
+cifras y el trabajo a 600; las funciones q limitan el trabajo a 2000.
+Los coeficientes exactos del orden y de las funciones q admiten hasta 4096 bits,
+y las potencias se rechazan antes de superar 12000 bits estimados. Esta guardia
+conservadora también limita las potencias de los funcionales aproximados.
+Las sustituciones y los parámetros de funciones definidas conservan el límite
+experimental de exponente ±1000.
+Las probabilidades escort aproximadas se normalizan como racionales almacenados,
+pero su procedencia aproximada se mantiene en consultas y sesiones.
+
+Los resultados finitos y sus condiciones se guardan como datos matemáticos;
+cargar no ejecuta fuente. Las sesiones previas siguen siendo legibles. Las
+definiciones pueden incluir el indicador booleano opcional `approximate`,
+que conserva procedencia sin modificar su valor matemático.
+Convenciones basadas en [Rényi (1961)](../SOURCES.md#s16) y
+[Tsallis (2002)](../SOURCES.md#s17); la implementación usa los dominios acotados
+descritos aquí.

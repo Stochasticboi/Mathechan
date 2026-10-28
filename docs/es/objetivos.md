@@ -37,11 +37,13 @@ resultados de cada etapa.
 
 La versión 0.1.0 es un prototipo por consola con aritmética exacta, un conjunto
 restringido de funciones simbólicas, derivación, gráficos SVG y archivos
-`.mchan`. La interfaz de escritorio y las herramientas especializadas siguen
-pendientes. Consulte [la comparativa](comparativa.md) para separar lo disponible
+`.mchan`. Esa versión no incluía interfaz gráfica ni herramientas de física
+estadística. Consulte [la comparativa](comparativa.md) para separar lo disponible
 de lo proyectado.
 
-Un primer recorrido científico futuro será definir un sistema discreto finito,
-normalizar sus probabilidades, calcular observables y graficar su dependencia
-de un parámetro. Es un objetivo de desarrollo; el prototipo actual no lo
-implementa como una herramienta especializada.
+El código actual completa la etapa de física estadística finita con ensambles
+canónicos, inferencia Shannon/KL y funcionales Rényi/Tsallis. Incluye soporte,
+condiciones y persistencia de resultados. Las ampliaciones continuas, MaxCal,
+inferencia con entropías generalizadas y ensambles cuánticos térmicos requieren
+desarrollo posterior. Consulte el [lenguaje](lenguaje.md) para los límites y
+la [cronología](../../README.md) para distinguir código y descargables.

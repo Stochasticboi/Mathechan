@@ -2,11 +2,11 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev11 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev12 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
 calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
 dev5–dev6 finite probability, dev7 hyperbolic functions, dev8 complex operations,
-dev9 probability families and moments, dev10 canonical systems or dev11 MaxEnt. Historical 0.1.1 sections record the scope
+dev9 probability families and moments, dev10 canonical systems dev11 MaxEnt or dev12 generalized entropies. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -177,7 +177,7 @@ verified by differentiation is a local branch verification. See the
 ## Finite canonical systems: development 0.2.0.dev10
 
 This first stage 6 block implements the canonical ensemble with a fixed spectrum.
-Finite `MaxEnt` inference is available in 6B; generalized entropies remain pending.
+Finite `MaxEnt` inference is available in 6B; generalized entropies are available in 6C.
 `Canon[E,beta]` creates a model, not a fit to prescribed constraints. Energies
 may repeat: entries have distinct identifiers. `Canon[E,beta,g]` supplies
 positive integer degeneracies, one per entry. Without `g`, each entry is one
@@ -1283,3 +1283,77 @@ without executing source, linear programming or optimization. Arithmetic
 validation does not establish cryptographic file authenticity. Stage 6B covers
 finite spaces; continuous MaxEnt, uncertain constraints, generalized entropies
 and MaxCal remain outside this block.
+
+
+## Generalized entropies and q-functions: development 0.2.0.dev12
+
+This block completes stage 6 for finite spaces. Evaluating an entropy
+functional is separate from inferring an optimal distribution: `MaxEnt`
+retains its 6B Shannon/KL objectives. Rényi/Tsallis optimization, MaxCal,
+continuous models and quantum thermal ensembles are outside this stage.
+
+| Operation | Definition and domain |
+| --- | --- |
+| `Renyi[d,a]` | ln(Σ p_i^a)/(1−a), a≥0; a=1 uses Shannon, a=0 counts positive support, a=Infinity uses −ln(max p_i). |
+| `Tsallis[d,q]` | (1−Σ p_i^q)/(q−1), q>0; q=1 uses Shannon. Returns S_q/kB without a physical constant factor. |
+| `KL[d,r]` | Σ p_i ln(p_i/r_i), d relative to r; aligns labels rather than array positions. |
+| `Escort[d,q]` | Distribution with the same labels and masses p_i^q/Σ p_j^q, q>0. |
+| `QExp[x,q]` | [1+(1−q)x]^(1/(1−q)); q=1 uses Exp[x]. |
+| `QLog[x,q]` | (x^(1−q)−1)/(1−q), x>0; q=1 uses Log[x]. |
+
+`d` and `r` must be finite or finite joint distributions, with at most 64
+states and existing construction budgets. Parameters are real; symbolic
+parameters retain executable conditions. Natural logarithms are used (nats
+for Rényi and KL). Negative orders are unsupported.
+
+```wolfram
+d = FiniteDistribution[{0,1},{1/4,3/4}]
+Tsallis[d,2]
+(* 3/8 *)
+Probabilities[Escort[d,2]]
+(* {1/10,9/10} *)
+Renyi[BernoulliDistribution[1/2],2]
+(* Log[2] *)
+QExp[2,1/2]
+(* 4 *)
+QLog[4,1/2]
+(* 2 *)
+```
+
+Zero masses contribute zero to Shannon and KL, without evaluating `0 Log[0]`.
+Rényi order zero counts positive masses, not declared rows. If p_i>0 and
+r_i=0, KL returns +Infinity with status `divergent`. The reference may have
+additional states. Spaces must have the same class and dimension; undecidable
+label equalities require specialization before evaluation. Infinite KL values
+or symbolic KL expressions with infinite branches can be queried, but cannot
+be assigned or stored as finite scalars.
+
+For q<1, `QExp` includes a zero cutoff when 1+(1−q)x≤0. For q>1 it requires
+1+(1−q)x>0; the divergent boundary and points beyond it raise a domain error.
+`QLog` requires x>0. Formal branch derivatives do not establish differentiability
+at the cutoff. Parameter substitution preserves conditions; q=1 selects the
+ordinary branch before division.
+
+Escort means are explicit: construct the distribution and use existing queries,
+such as `Mean[Escort[d,2]]`. `Mean[d]` remains the ordinary mean; model
+constraints are never silently changed. For 6A/6B models, convert through
+`Dist`, for example `Tsallis[Dist[MaxEnt[{0,1},1/4]],2]`. With degeneracy,
+`Dist[Canon[...]]` represents level masses rather than expanded microstates;
+these generalized level entropies do not replace the physical 6A entropy.
+
+Float inputs use their stored binary value. Guard digits near order one
+reduce cancellation; they do not certify digits or experimental uncertainty.
+Functionals cap numerical output at 100 digits and working precision at 600;
+q-functions cap working precision at 2000. Exact order and q-function
+coefficients are limited to 4096 bits; powers are rejected before exceeding
+12000 estimated bits. This conservative guard also limits powers in approximate
+functionals. Substitution and user-function arguments retain the experimental
+±1000 exponent limit.
+Approximate escort probabilities are normalized as stored rationals while
+queries and sessions retain their approximation provenance.
+
+Finite results and conditions are saved as mathematical data; loading never
+executes source. Previous sessions remain readable. Stored definitions may
+include an optional boolean `approximate` field to retain provenance without
+changing mathematical values. Conventions follow [Rényi (1961)](../SOURCES.md#s16)
+and [Tsallis (2002)](../SOURCES.md#s17), within the bounded domains above.

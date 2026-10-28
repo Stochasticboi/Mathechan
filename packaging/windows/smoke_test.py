@@ -16,6 +16,15 @@ class SmokeTestError(RuntimeError):
 
 
 SCIENTIFIC_CASES = (
+    ('renyi-order-two', 'Renyi[BernoulliDistribution[1/2],2]'),
+    ('tsallis-order-two', 'Tsallis[BernoulliDistribution[1/2],2]'),
+    ('kl-label-alignment', 'KL[FiniteDistribution[{0,1},{1/4,3/4}],FiniteDistribution[{1,0},{3/4,1/4}]]'),
+    ('escort-masses', 'Probabilities[Escort[FiniteDistribution[{0,1},{1/4,3/4}],2]]'),
+    ('q-exponential', 'QExp[2,1/2]'),
+    ('q-logarithm', 'QLog[4,1/2]'),
+    ('renyi-positive-support', 'Renyi[FiniteDistribution[{0,1},{1,0}],0]'),
+    ('tsallis-shannon-limit', 'Tsallis[BernoulliDistribution[1/2],1]'),
+
     ('maxent-probabilities', 'Probabilities[MaxEnt[{0,1},1/4]]'),
     ('maxent-dual', 'Dual[MaxEnt[{0,1},1/4]]'),
     ('maxent-residuals', 'Residuals[MaxEnt[{0,1},1/4]]'),
@@ -115,6 +124,15 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    'Renyi[BernoulliDistribution[1/2],2]': ('expression', 'log(2)'),
+    'Tsallis[BernoulliDistribution[1/2],2]': ('expression', '1/2'),
+    'KL[FiniteDistribution[{0,1},{1/4,3/4}],FiniteDistribution[{1,0},{3/4,1/4}]]': ('expression', '0'),
+    'Probabilities[Escort[FiniteDistribution[{0,1},{1/4,3/4}],2]]': ('list', '{(1/10),(9/10)}'),
+    'QExp[2,1/2]': ('expression', '4'),
+    'QLog[4,1/2]': ('expression', '2'),
+    'Renyi[FiniteDistribution[{0,1},{1,0}],0]': ('expression', '0'),
+    'Tsallis[BernoulliDistribution[1/2],1]': ('expression', 'log(2)'),
+
     'Probabilities[MaxEnt[{0,1},1/4]]': ('list', '{(3/4),(1/4)}'),
     'Dual[MaxEnt[{0,1},1/4]]': ('list', '{Log[3]}'),
     'Residuals[MaxEnt[{0,1},1/4]]': ('list', '{0}'),

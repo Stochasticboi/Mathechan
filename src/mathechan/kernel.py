@@ -172,7 +172,24 @@ FUNCTIONS = {
 
 def _stored_value(stored, replacements, restrictions, state):
     """Use immutable snapshots while carrying their original domain conditions."""
+    if replacements:
+        # Function arguments specialize stored expressions without re-entering
+        # their original operation. Bound powers before that reconstruction.
+        for power in sorted(stored.value.atoms(sp.Pow), key=sp.count_ops):
+            if not any(power.has(symbol) for symbol in replacements):
+                continue
+            base = power.base.xreplace(replacements)
+            exponent = power.exp.xreplace(replacements)
+            if base in (sp.S.Zero, sp.S.One, -sp.S.One):
+                continue
+            if exponent.is_real is True and exponent.is_finite is True and abs(exponent) > 1000:
+                raise MathechanError("La potencia ligada excede el límite experimental ±1000.")
+            if isinstance(base, sp.Rational) and isinstance(exponent, sp.Rational):
+                bits = max(abs(int(base.p)).bit_length(), int(base.q).bit_length())
+                if bits*abs(int(exponent.p)) > 12000:
+                    raise MathechanError("La potencia ligada excede 12000 bits estimados.")
     value = stored.value.xreplace(replacements)
+    state.approximate_inputs |= stored.approximate or value.has(sp.Float)
     from .maxent import MaxEntResult
     if isinstance(value, MaxEntResult):
         state.details.update(value.diagnostics())
@@ -470,16 +487,20 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
             state.mark_status("series")
         if capture is not None:
             capture.update(restrictions=tuple(restrictions), requirements=tuple(state.requirements), warnings=tuple(state.warnings))
+        allowed_infinity = expression is sp.oo and state.extended_positive_infinity
         if ((expression.has(sp.zoo, sp.nan) and not expression.has(sp.Piecewise))
-                or (isinstance(expression, sp.Expr) and expression.is_finite is False)):
+                or (isinstance(expression, sp.Expr) and expression.is_finite is False
+                    and not allowed_infinity)):
             raise MathechanError("El resultado no es finito o está indefinido.")
+        if allowed_infinity:
+            state.mark_status("divergent")
         candidate = reusable_input(expression)
         warnings = list(state.warnings)
         if candidate is None:
             warnings.append("El resultado no tiene entrada reutilizable dentro del lenguaje y límites actuales.")
         if restrictions:
             warnings.append("La entrada del resultado no conserva por sí sola las condiciones originales; consérvelas por separado.")
-        exact = not expression.has(sp.Float)
+        exact = not expression.has(sp.Float) and not state.approximate_inputs
         kind = "solutions" if node.kind == "call" and node.value in ("Solve", "NSolve", "DSolve") else "expression"
         if isinstance(expression, sp.Equality) and kind == "expression":
             kind = "equation"

@@ -1,6 +1,7 @@
 # Fuentes / Sources
 
-Consulta / Accessed: **18 October 2026**.
+Consulta inicial de S01–S15 / Initial access for S01–S15: **18 October 2026**.
+S16–S17 añadidas / added: **28 October 2026**.
 
 Fuentes públicas oficiales de Wolfram para los antecedentes y la comparativa.
 Las fechas de versiones son fechas de lanzamiento, con precisión mensual salvo
@@ -76,6 +77,20 @@ Anuncio / Announcement: 23 June 2003.
 ## S15
 
 [Finite Markov Processes](https://reference.wolfram.com/language/guide/MarkovProcesses.html).
+
+## S16
+
+Alfréd Rényi (1961), [On Measures of Entropy and Information](https://static.renyi.hu/renyi_cikkek/1961_on_measures_of_entropy_and_information.pdf).
+El original emplea logaritmos en base dos; Mathechan declara logaritmos naturales.
+The original uses base-two logarithms; Mathechan explicitly uses natural logarithms.
+
+## S17
+
+Constantino Tsallis (2002), [Nonextensive statistical mechanics: a brief review of its present status](https://www.scielo.br/j/aabc/a/LLSMmcf74LCk3YczF4CPMTw/?lang=en).
+Definiciones de entropía, funciones q, corte y medias generalizadas; la
+implementación finita no incluye el optimizador térmico descrito en el artículo.
+Entropy, q-function, cutoff and generalized-mean definitions; the finite
+implementation does not include the paper's thermal optimizer.
 
 ## Alcance / Scope
 

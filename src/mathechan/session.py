@@ -113,7 +113,8 @@ class Session:
             raise MathechanError("La asignación requiere escalares finitos, listas, matrices "
                                  "o expresiones Hold sin resultados pendientes de verificar.")
         return StoredDefinition(value, tuple(capture.get("restrictions", ())),
-                                tuple(capture.get("requirements", ())), tuple(result.warnings))
+                                tuple(capture.get("requirements", ())), tuple(result.warnings),
+                                approximate=not result.exact)
 
     @staticmethod
     def _check_name(name):

@@ -84,6 +84,7 @@ def replacement_call(node, build, restrictions, state, bindings, functions, defi
         if sp.count_ops(left) > 128 or len(local) > 64:
             raise ValueError("La regla excede el presupuesto estructural.")
         state.steps, state.sum_terms = child.steps, child.sum_terms
+        state.approximate_inputs |= child.approximate_inputs
         state.warnings.extend(child.warnings)
         required = list(child.requirements)
         if child.assumptions is not sp.true:
@@ -99,6 +100,8 @@ def replacement_call(node, build, restrictions, state, bindings, functions, defi
     if not _valid_value(expression):
         raise ValueError("ReplaceAll requiere una expresión, ecuación, lista o matriz.")
     state.steps, state.sum_terms = expression_state.steps, expression_state.sum_terms
+    state.approximate_inputs |= expression_state.approximate_inputs
+    state.extended_positive_infinity |= expression_state.extended_positive_infinity
     raw = read(node.children[1])
     rules = tuple(raw) if isinstance(raw, sp.Tuple) else (raw,)
     if len(rules) > 64 or any(not isinstance(rule, RuleValue) for rule in rules):
@@ -157,6 +160,14 @@ def replacement_call(node, build, restrictions, state, bindings, functions, defi
             return value
         if isinstance(value, sp.Equality):
             return sp.Eq(*args, evaluate=False)
+        if value.func is sp.Pow and len(args) == 2:
+            base, exponent = args
+            if exponent.is_number and (exponent.is_real is not True or abs(exponent) > 1000):
+                raise ValueError("La potencia sustituida excede el límite experimental ±1000.")
+            if isinstance(base, sp.Rational) and isinstance(exponent, sp.Rational):
+                bits = max(abs(int(base.p)).bit_length(), int(base.q).bit_length())
+                if base not in (0, 1, -1) and bits*abs(int(exponent.p)) > 12000:
+                    raise ValueError("La potencia sustituida excede 12000 bits estimados.")
         return value.func(*args)
 
     # Bound variables and retained operators need explicit scope-aware rules,
