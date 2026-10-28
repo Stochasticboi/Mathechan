@@ -49,6 +49,9 @@ def probability_call(node, build, restrictions, state, bindings, functions, defi
     arguments = tuple(build(child, restrictions, state, bindings, functions, definitions)
                       for child in node.children)
     from .canonical import CanonicalState, canonical_operation
+    from .maxent import MaxEntResult, maxent_operation
+    if arguments and isinstance(arguments[0], MaxEntResult):
+        return absorb_probability(maxent_operation(node.value, arguments, state.assumptions), state)
     if arguments and isinstance(arguments[0], CanonicalState):
         return absorb_probability(canonical_operation(node.value, arguments, state.assumptions), state)
     aliases = {"MomentGeneratingFunction": "MGF", "CharacteristicFunction": "CF"}

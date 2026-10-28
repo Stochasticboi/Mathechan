@@ -173,6 +173,9 @@ FUNCTIONS = {
 def _stored_value(stored, replacements, restrictions, state):
     """Use immutable snapshots while carrying their original domain conditions."""
     value = stored.value.xreplace(replacements)
+    from .maxent import MaxEntResult
+    if isinstance(value, MaxEntResult):
+        state.details.update(value.diagnostics())
     if value.has(sp.Order) or any("aproximación truncada" in warning for warning in stored.warnings):
         state.mark_status("series")
     for item in stored.restrictions:
@@ -488,6 +491,8 @@ def _evaluate_node(node, source, definitions=None, assumptions=None, capture=Non
             kind = "held"
         elif expression.func.__name__ == "CanonicalState":
             kind = "ensemble"
+        elif expression.func.__name__ == "MaxEntResult":
+            kind = "inference"
         elif expression.func.__name__ in {"FiniteDistribution", "JointFiniteDistribution", "ParametricDistribution"}:
             kind = "distribution"
         elif expression.func.__name__ == "RuleValue":

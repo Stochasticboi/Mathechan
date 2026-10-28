@@ -16,6 +16,15 @@ class SmokeTestError(RuntimeError):
 
 
 SCIENTIFIC_CASES = (
+    ('maxent-probabilities', 'Probabilities[MaxEnt[{0,1},1/4]]'),
+    ('maxent-dual', 'Dual[MaxEnt[{0,1},1/4]]'),
+    ('maxent-residuals', 'Residuals[MaxEnt[{0,1},1/4]]'),
+    ('maxent-boundary', 'Active[MaxEnt[{0,1,2},0]]'),
+    ('maxent-redundancy', 'Rank[MaxEnt[{{0,0},{1,2},{2,4}},{1,2}]]'),
+    ('maxent-reference', 'RelEntropy[MaxEnt[{1,1},1,{1/4,3/4}]]'),
+    ('maxent-convergence', 'Converged[MaxEnt[{0,1},1/4]]'),
+    ('maxent-score', 'Score[MaxEnt[{1,1},1,{1/4,3/4}]]'),
+
     ("canonical-degenerate-probabilities", "Probabilities[Canon[{0,1,2},Log[2],{1,2,1}]]"),
     ("canonical-energy", "Energy[Canon[{0,1,2},Log[2],{1,2,1}]]"),
     ("canonical-variance", "Variance[Canon[{0,1,2},Log[2],{1,2,1}]]"),
@@ -106,6 +115,15 @@ CURVILINEAR_REFERENCES = {
 }
 
 EXACT_REFERENCES = {
+    'Probabilities[MaxEnt[{0,1},1/4]]': ('list', '{(3/4),(1/4)}'),
+    'Dual[MaxEnt[{0,1},1/4]]': ('list', '{Log[3]}'),
+    'Residuals[MaxEnt[{0,1},1/4]]': ('list', '{0}'),
+    'Active[MaxEnt[{0,1,2},0]]': ('list', '{1}'),
+    'Rank[MaxEnt[{{0,0},{1,2},{2,4}},{1,2}]]': ('expression', '1'),
+    'RelEntropy[MaxEnt[{1,1},1,{1/4,3/4}]]': ('expression', '0'),
+    'Converged[MaxEnt[{0,1},1/4]]': ('logical', 'True'),
+    'Score[MaxEnt[{1,1},1,{1/4,3/4}]]': ('expression', '0'),
+
     "Probabilities[Canon[{0,1,2},Log[2],{1,2,1}]]": ("list", "{(4/9),(4/9),(1/9)}"),
     "Energy[Canon[{0,1,2},Log[2],{1,2,1}]]": ("expression", "2/3"),
     "Variance[Canon[{0,1,2},Log[2],{1,2,1}]]": ("expression", "4/9"),

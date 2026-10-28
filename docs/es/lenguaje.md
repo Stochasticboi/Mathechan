@@ -2,12 +2,12 @@
 
 [English](../en/language.md)
 
-Este documento describe el código **0.2.0.dev10**. La descarga publicada
+Este documento describe el código **0.2.0.dev11**. La descarga publicada
 **0.2.0-dev0** incluye las sesiones y el álgebra ampliada, pero no los límites
 de dev1, las ampliaciones de cálculo y reglas de dev2 ni las cartas curvilíneas
 de dev3, el álgebra lineal de dev4, la probabilidad finita de dev5–dev6 ni las
 hiperbólicas de dev7, las operaciones complejas de dev8 ni las familias y
-momentos probabilísticos de dev9 ni los sistemas canónicos de dev10. Las subsecciones
+momentos probabilísticos de dev9, los sistemas canónicos de dev10 ni MaxEnt de dev11. Las subsecciones
 históricas de 0.1.1 registran el alcance de esa versión anterior.
 Consulte [las descargas](../../README.md) para elegir una distribución.
 
@@ -181,8 +181,8 @@ verificación local en su rama. Véanse las
 ## Sistemas canónicos finitos: desarrollo 0.2.0.dev10
 
 Este primer bloque de la etapa 6 implementa el ensamble canónico con espectro
-fijo. La inferencia `MaxEnt` y las entropías generalizadas quedan para los
-bloques siguientes. `Canon[E,beta]` crea un modelo, no un ajuste de restricciones.
+fijo. La inferencia finita `MaxEnt` se incorpora en 6B; las entropías
+generalizadas siguen pendientes. `Canon[E,beta]` crea un modelo, no un ajuste de restricciones.
 Las energías pueden repetirse; cada entrada tiene un identificador distinto.
 `Canon[E,beta,g]` declara degeneraciones enteras positivas, una por entrada.
 Sin `g`, cada entrada representa un microestado. Los conteos no son un prior
@@ -354,7 +354,7 @@ sin recuperar información que no estaba en los datos originales.
 Presupuestos: hasta ocho símbolos y 256 operaciones de entrada en familias;
 momentos hasta orden total doce; tablas conjuntas de hasta cuatro coordenadas
 y 64 estados. Salidas hasta 4096 operaciones. Son límites estructurales, sin
-garantía de tiempo o memoria. MaxEnt, MaxCal y simulación pertenecen a etapas
+garantía de tiempo o memoria. MaxCal y simulación pertenecen a etapas
 posteriores.
 
 ## Probabilidad discreta finita: desarrollo 0.2.0.dev5
@@ -419,7 +419,7 @@ Véanse las [convenciones de distribuciones discretas](https://www.itl.nist.gov/
 
 La etapa 5 prepara probabilidades, observables y medidas de dependencia para
 física estadística. Este incremento amplía la base discreta a varios observables;
-no implementa todavía inferencia MaxEnt/MaxCal ni simulaciones.
+La inferencia MaxEnt finita se documenta en su sección; MaxCal y simulaciones siguen pendientes.
 
 `JointFiniteDistribution[{{x1,y1},...},{p1,...}]` representa masas de probabilidad
 conjuntas. Cada fila tiene de dos a cuatro coordenadas reales finitas. Las filas
@@ -1261,3 +1261,68 @@ API en `mathechan.notebook`: `new_notebook()`, `new_cell(source, kind="code")`,
 No se admiten HTML o SVG embebidos en este formato inicial. El archivo
 `examples/gaussian.mchan` contiene fuentes sin resultados precalculados;
 `Exp[-x^2]` por sí sola no es una densidad normalizada.
+
+
+## Inferencia MaxEnt finita: desarrollo 0.2.0.dev11
+
+`MaxEnt[F,m]` maximiza la entropía de Shannon bajo normalización y medias
+impuestas. `MaxEnt[F,m,q]` minimiza `KL(p||q)` con una referencia normalizada.
+Las filas de `F` son estados y sus columnas observables; `m` contiene las medias
+solicitadas. Para un observable se admite un vector y una media escalar.
+
+```wolfram
+r = MaxEnt[{0,1},1/4]
+Probabilities[r]
+(* {3/4,1/4} *)
+Dual[r]
+(* {Log[3]} *)
+Residuals[r]
+(* {0} *)
+```
+
+Las entradas deben ser racionales numéricas o aproximaciones `N` que se
+convierten a su valor binario racional almacenado. No admite parámetros
+simbólicos ni constantes irracionales exactas. La referencia debe sumar
+exactamente uno; sus ceros excluyen estados. El límite actual es 32 estados,
+cuatro observables y 4096 bits por racional de entrada.
+
+| Consulta | Resultado |
+| --- | --- |
+| `Probabilities[r]`, `Dist[r]` | Masas; distribución con estados numerados desde 1 |
+| `Entropy[r]`, `RelEntropy[r]` | Shannon y KL respecto de la referencia |
+| `Score[r]` | Shannon sin referencia explícita; menos KL con referencia |
+| `Means[r]`, `Targets[r]`, `Residuals[r]` | Medias alcanzadas, solicitadas y su diferencia |
+| `Active[r]`, `Rank[r]`, `Converged[r]` | Estados activos, rango independiente y convergencia validada |
+| `Dual[r]`, `FaceDual[r]` | Multiplicadores globales interiores o de la cara activa |
+| `LogZ[r]`, `DualGap[r]` | Normalizador relativo y brecha dual estimada |
+
+Se usa la convención `p_i = q_i Exp[-lambda.F_i]/Z` sobre el soporte activo.
+`LogZ` usa `q` normalizada, uniforme si se omite: **no es la partición física**
+de `Canon` y no define energía libre. Las columnas redundantes tienen
+multiplicador cero. En una frontera `Dual` devuelve un error; `FaceDual`
+expone el dual de la cara con una advertencia. El soporte se determina respecto
+de los estados permitidos por `q`.
+
+La factibilidad y la cara mínima se comprueban con aritmética racional y
+certificados. Si el procedimiento geométrico excede su presupuesto, informa
+un límite de cálculo, no infactibilidad. La enumeración de respaldo tiene un
+máximo de 20000 bases. Se resuelven exactamente casos cerrados; el resto usa
+Newton amortiguado con centrado, escalado y log-sum-exp, hasta 200 iteraciones.
+`MaxEnt[F,m,q,precision]` solicita entre 10 y 100 dígitos, 50 por defecto.
+No se retorna una distribución uniforme como sustituto de un fallo.
+
+Los diagnósticos incluyen residuos de medias y estacionariedad, iteraciones,
+precisión y brecha dual estimada. La tolerancia numérica usa residuos escalados;
+`Residuals` conserva la diferencia sin escalar de las masas almacenadas.
+La precisión no es una cota rigurosa ni representa incertidumbre de los datos.
+Los casos exactos registran precisión cero. El rango logarítmico de pesos se
+limita a 6000 y los racionales de salida a 12000 bits; casos que excedan los
+presupuestos se rechazan. `N` no aumenta la precisión de un resultado guardado:
+para ello se solicita otra inferencia con el cuarto argumento.
+
+Las sesiones guardan datos, probabilidades, dual, testigo factible y certificado
+de soporte. Al cargar se validan normalización, medias, cara y estacionariedad
+sin ejecutar fuente, programación lineal ni optimización. Esta validación
+aritmética no acredita la autenticidad criptográfica del archivo.
+La etapa 6B cubre espacios finitos; MaxEnt continuo, restricciones con
+incertidumbre, entropías generalizadas y MaxCal quedan fuera de este bloque.

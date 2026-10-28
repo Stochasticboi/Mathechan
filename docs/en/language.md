@@ -2,11 +2,11 @@
 
 [Español](../es/lenguaje.md)
 
-This document describes **0.2.0.dev10 source**. The published **0.2.0-dev0**
+This document describes **0.2.0.dev11 source**. The published **0.2.0-dev0**
 download includes sessions and extended algebra, but not dev1 limits, dev2
 calculus and replacement extensions, dev3 curvilinear charts, dev4 linear algebra,
 dev5–dev6 finite probability, dev7 hyperbolic functions, dev8 complex operations,
-dev9 probability families and moments, or dev10 canonical systems. Historical 0.1.1 sections record the scope
+dev9 probability families and moments, dev10 canonical systems or dev11 MaxEnt. Historical 0.1.1 sections record the scope
 of that earlier version. Check [downloads](../../README.en.md) before choosing
 a distribution.
 
@@ -177,7 +177,7 @@ verified by differentiation is a local branch verification. See the
 ## Finite canonical systems: development 0.2.0.dev10
 
 This first stage 6 block implements the canonical ensemble with a fixed spectrum.
-`MaxEnt` inference and generalized entropies remain subsequent blocks.
+Finite `MaxEnt` inference is available in 6B; generalized entropies remain pending.
 `Canon[E,beta]` creates a model, not a fit to prescribed constraints. Energies
 may repeat: entries have distinct identifiers. `Canon[E,beta,g]` supplies
 positive integer degeneracies, one per entry. Without `g`, each entry is one
@@ -346,7 +346,7 @@ information absent from the original data.
 Budgets: up to eight symbols and 256 input operations for families; moments
 up to total order twelve; finite joint tables up to four coordinates and
 64 states. Outputs allow at most 4096 operations. These structural limits
-do not guarantee execution time or memory use. MaxEnt, MaxCal and simulation
+do not guarantee execution time or memory use. MaxCal and simulation
 belong to later stages.
 
 ## Finite discrete probability: development 0.2.0.dev5
@@ -408,7 +408,7 @@ rationals, without certified input uncertainty. See the
 
 Stage 5 prepares probabilities, observables and measures of dependence for
 statistical physics. This increment extends finite probability to multiple
-observables; it does not implement MaxEnt/MaxCal inference or simulation.
+observables; finite MaxEnt inference is documented separately; MaxCal and simulation remain pending.
 
 `JointFiniteDistribution[{{x1,y1},...},{p1,...}]` represents joint probability
 masses. Rows have two to four finite real coordinates and must be distinct.
@@ -1220,3 +1220,66 @@ API in `mathechan.notebook`: `new_notebook()`, `new_cell(source, kind="code")`,
 Embedded HTML or SVG is not supported by this initial format.
 `examples/gaussian.mchan` contains source cells without cached results;
 `Exp[-x^2]` alone is not a normalized probability density.
+
+
+## Finite MaxEnt inference: development 0.2.0.dev11
+
+`MaxEnt[F,m]` maximizes Shannon entropy subject to normalization and prescribed
+means. `MaxEnt[F,m,q]` minimizes `KL(p||q)` against a normalized reference.
+Rows of `F` are states, columns are observables, and `m` gives target means.
+A vector and a scalar mean are accepted for a single observable.
+
+```wolfram
+r = MaxEnt[{0,1},1/4]
+Probabilities[r]
+(* {3/4,1/4} *)
+Dual[r]
+(* {Log[3]} *)
+Residuals[r]
+(* {0} *)
+```
+
+Inputs must be numerical rationals or `N` approximations converted to their
+stored binary rational value. Symbolic parameters and exact irrational
+constants are unsupported. The reference must sum exactly to one; zero
+reference masses forbid states. Current limits are 32 states, four observables
+and 4096 bits per input rational.
+
+| Query | Result |
+| --- | --- |
+| `Probabilities[r]`, `Dist[r]` | Masses; a distribution on state indices starting at 1 |
+| `Entropy[r]`, `RelEntropy[r]` | Shannon entropy and KL against the reference |
+| `Score[r]` | Shannon without an explicit reference; negative KL otherwise |
+| `Means[r]`, `Targets[r]`, `Residuals[r]` | Achieved means, requested means and their difference |
+| `Active[r]`, `Rank[r]`, `Converged[r]` | Active states, independent rank and validated convergence |
+| `Dual[r]`, `FaceDual[r]` | Interior global or active-face multipliers |
+| `LogZ[r]`, `DualGap[r]` | Relative normalizer and estimated dual gap |
+
+The convention is `p_i = q_i Exp[-lambda.F_i]/Z` on the active support.
+`LogZ` uses normalized `q`, uniform when omitted: it is **not the physical
+partition function** of `Canon` and does not define free energy. Redundant
+columns have zero multipliers. On a boundary `Dual` raises an error;
+`FaceDual` returns face multipliers with a warning. Boundaries are relative
+to states permitted by `q`.
+
+Feasibility and the minimal face use rational witnesses and certificates.
+Geometry budget exhaustion is reported as a computation limit, never as
+infeasibility. The fallback enumeration permits at most 20000 bases. Closed
+cases are exact; other cases use a centered, scaled, log-sum-exp damped Newton
+solver with at most 200 iterations. `MaxEnt[F,m,q,precision]` requests 10 to
+100 digits, default 50. A failed solve never falls back to uniform masses.
+
+Diagnostics include mean and stationarity residuals, iterations, precision and
+estimated dual gap. Numerical stopping uses scaled residuals; `Residuals`
+retains the unscaled difference computed from stored masses. Precision is not
+a rigorous bound or a measure of input uncertainty. Exact cases record zero
+precision. Log-weight spread is limited to 6000, output rationals to 12000
+bits; cases exceeding budgets are rejected. `N` does not increase precision
+of a stored result: request another inference with the fourth argument.
+
+Sessions store data, masses, multipliers, a feasibility witness and a support
+certificate. Loading validates normalization, moments, face and stationarity
+without executing source, linear programming or optimization. Arithmetic
+validation does not establish cryptographic file authenticity. Stage 6B covers
+finite spaces; continuous MaxEnt, uncertain constraints, generalized entropies
+and MaxCal remain outside this block.
