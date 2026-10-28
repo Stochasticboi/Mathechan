@@ -30,24 +30,25 @@ Los módulos del programa están en [`src/mathechan`](src/mathechan).
 ## Evolución del proyecto
 
 Cada fila resume lo que se añadió a la versión anterior. Los detalles y las
-correcciones están en el [historial de cambios](CHANGELOG.md).
+correcciones están en el [historial de cambios](CHANGELOG.md). Los ejemplos
+requieren la versión indicada o una posterior.
 
 | Versión | Qué incorporó |
 | --- | --- |
-| **0.1.0** · 18 oct 2026 | Primer núcleo: aritmética exacta, expresiones simbólicas, derivadas, simplificación, gráficos SVG y cuadernos JSON. |
-| **0.1.1** · 19 oct 2026 | Evaluación numérica, factorización, fracciones algebraicas, sustitución, sumas finitas, integración, ecuaciones y EDO. |
-| **0.2.0.dev0** · 22 oct 2026 | Sesiones persistentes, definiciones y funciones, hipótesis, álgebra ampliada y sistemas no lineales. **Versión descargable actual.** |
-| **0.2.0.dev1** | Límites reales, bilaterales y laterales; distinción entre convergencia, divergencia y cálculo pendiente. |
-| **0.2.0.dev2** | Reglas `/.`, `->` y `:>`, series, derivadas mixtas, productos, cálculo vectorial cartesiano e integrales iteradas. |
-| **0.2.0.dev3** | Cálculo vectorial en coordenadas cilíndricas y esféricas. |
-| **0.2.0.dev4** | Operaciones matriciales, rango, sistemas lineales, autovalores, autovectores y exponencial matricial. |
-| **0.2.0.dev5** | Probabilidad discreta finita: distribuciones, eventos, esperanza, varianza y entropía. |
-| **0.2.0.dev6** | Distribuciones conjuntas, marginales, condicionamiento, covarianza y correlación. |
-| **0.2.0.dev7** | Funciones hiperbólicas y sus inversas, con derivación e integración. |
-| **0.2.0.dev8** | Álgebra compleja para sistemas cuánticos pequeños: adjuntos, productos tensoriales, proyectores y traza parcial. |
-| **0.2.0.dev9** | Binomial, Poisson, normal, exponencial y gamma; densidades, acumuladas, generatrices, momentos y cumulantes. |
-| **0.2.0.dev10** | Ensambles canónicos finitos: degeneración, energía media, fluctuaciones, energía libre y capacidad calorífica. |
-| **0.2.0.dev11** · actual | Inferencia MaxEnt finita: Shannon o KL con referencia, varias medias, soporte activo y resultados guardables. |
+| **0.1.0** · 18 oct 2026 | Primer núcleo: aritmética exacta, expresiones simbólicas, derivadas, simplificación, gráficos SVG y cuadernos JSON.<br>Ejemplo: `D[x^3,x]` |
+| **0.1.1** · 19 oct 2026 | Evaluación numérica, factorización, fracciones algebraicas, sustitución, sumas finitas, integración, ecuaciones y EDO.<br>Ejemplo: `Integrate[x^2,{x,0,1}]` |
+| **0.2.0.dev0** · 22 oct 2026 | Sesiones persistentes, definiciones y funciones, hipótesis, álgebra ampliada y sistemas no lineales. **Versión descargable actual.**<br>Ejemplo: `Assuming[x>0,Simplify[Sqrt[x^2]]]` |
+| **0.2.0.dev1** | Límites reales, bilaterales y laterales; distinción entre convergencia, divergencia y cálculo pendiente.<br>Ejemplo: `Limit[Sin[x]/x,x,0]` |
+| **0.2.0.dev2** | Reglas `/.`, `->` y `:>`, series, derivadas mixtas, productos, cálculo vectorial cartesiano e integrales iteradas.<br>Ejemplo: `x^2 /. x -> 3` |
+| **0.2.0.dev3** | Cálculo vectorial en coordenadas cilíndricas y esféricas.<br>Ejemplo: `Div[{r,0,0},{r,t,p},"Spherical"]` |
+| **0.2.0.dev4** | Operaciones matriciales, rango, sistemas lineales, autovalores, autovectores y exponencial matricial.<br>Ejemplo: `Eigenvalues[{{1,0},{0,2}}]` |
+| **0.2.0.dev5** | Probabilidad discreta finita: distribuciones, eventos, esperanza, varianza y entropía.<br>Ejemplo: `Mean[BernoulliDistribution[1/4]]` |
+| **0.2.0.dev6** | Distribuciones conjuntas, marginales, condicionamiento, covarianza y correlación.<br>Ejemplo: `JointFiniteDistribution[{{0,0},{1,1}},{1/2,1/2}]` |
+| **0.2.0.dev7** | Funciones hiperbólicas y sus inversas, con derivación e integración.<br>Ejemplo: `D[Sinh[x],x]` |
+| **0.2.0.dev8** | Álgebra compleja para sistemas cuánticos pequeños: adjuntos, productos tensoriales, proyectores y traza parcial.<br>Ejemplo: `Adj[{{1,Imag},{0,1}}]` |
+| **0.2.0.dev9** | Binomial, Poisson, normal, exponencial y gamma; densidades, acumuladas, generatrices, momentos y cumulantes.<br>Ejemplo: `CDF[NormalDistribution[0,1],0]` |
+| **0.2.0.dev10** | Ensambles canónicos finitos: degeneración, energía media, fluctuaciones, energía libre y capacidad calorífica.<br>Ejemplo: `Energy[Canon[{0,1},Log[2]]]` |
+| **0.2.0.dev11** · actual | Inferencia MaxEnt finita: Shannon o KL con referencia, varias medias, soporte activo y resultados guardables.<br>Ejemplo: `Probabilities[MaxEnt[{0,1},1/4]]` |
 
 Las versiones **dev1–dev11** están integradas en el código; todavía no tienen
 un descargable propio. La sintaxis y los límites de cada operación se describen

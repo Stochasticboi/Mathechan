@@ -30,24 +30,25 @@ Run these commands from the repository directory. The second line returns
 ## Project timeline
 
 Each row describes what was added to the preceding version. Details and fixes
-are recorded in the [changelog](CHANGELOG.md).
+are recorded in the [changelog](CHANGELOG.md). Examples require the listed
+version or a later one.
 
 | Version | What it added |
 | --- | --- |
-| **0.1.0** · 18 Oct 2026 | First kernel: exact arithmetic, symbolic expressions, differentiation, simplification, SVG plots and JSON notebooks. |
-| **0.1.1** · 19 Oct 2026 | Numerical evaluation, factoring, rational expressions, substitution, finite sums, integration, equations and ODEs. |
-| **0.2.0.dev0** · 22 Oct 2026 | Persistent sessions, definitions and functions, assumptions, extended algebra and nonlinear systems. **Current downloadable version.** |
-| **0.2.0.dev1** | Real two-sided and one-sided limits; distinct convergent, divergent and unresolved results. |
-| **0.2.0.dev2** | `/.`, `->` and `:>` rules, series, mixed derivatives, products, Cartesian vector calculus and iterated integrals. |
-| **0.2.0.dev3** | Vector calculus in cylindrical and spherical coordinates. |
-| **0.2.0.dev4** | Matrix arithmetic, rank, linear systems, eigenvalues, eigenvectors and matrix exponentials. |
-| **0.2.0.dev5** | Finite discrete probability: distributions, events, expectation, variance and entropy. |
-| **0.2.0.dev6** | Joint distributions, marginals, conditioning, covariance and correlation. |
-| **0.2.0.dev7** | Hyperbolic functions and their inverses, with differentiation and integration. |
-| **0.2.0.dev8** | Complex algebra for small quantum systems: adjoints, tensor products, projectors and partial traces. |
-| **0.2.0.dev9** | Binomial, Poisson, normal, exponential and gamma families; densities, cumulative distributions, generating functions, moments and cumulants. |
-| **0.2.0.dev10** | Finite canonical ensembles: degeneracy, mean energy, fluctuations, free energy and heat capacity. |
-| **0.2.0.dev11** · current | Finite MaxEnt inference: Shannon or KL against a reference, multiple means, active support and saved results. |
+| **0.1.0** · 18 Oct 2026 | First kernel: exact arithmetic, symbolic expressions, differentiation, simplification, SVG plots and JSON notebooks.<br>Example: `D[x^3,x]` |
+| **0.1.1** · 19 Oct 2026 | Numerical evaluation, factoring, rational expressions, substitution, finite sums, integration, equations and ODEs.<br>Example: `Integrate[x^2,{x,0,1}]` |
+| **0.2.0.dev0** · 22 Oct 2026 | Persistent sessions, definitions and functions, assumptions, extended algebra and nonlinear systems. **Current downloadable version.**<br>Example: `Assuming[x>0,Simplify[Sqrt[x^2]]]` |
+| **0.2.0.dev1** | Real two-sided and one-sided limits; distinct convergent, divergent and unresolved results.<br>Example: `Limit[Sin[x]/x,x,0]` |
+| **0.2.0.dev2** | `/.`, `->` and `:>` rules, series, mixed derivatives, products, Cartesian vector calculus and iterated integrals.<br>Example: `x^2 /. x -> 3` |
+| **0.2.0.dev3** | Vector calculus in cylindrical and spherical coordinates.<br>Example: `Div[{r,0,0},{r,t,p},"Spherical"]` |
+| **0.2.0.dev4** | Matrix arithmetic, rank, linear systems, eigenvalues, eigenvectors and matrix exponentials.<br>Example: `Eigenvalues[{{1,0},{0,2}}]` |
+| **0.2.0.dev5** | Finite discrete probability: distributions, events, expectation, variance and entropy.<br>Example: `Mean[BernoulliDistribution[1/4]]` |
+| **0.2.0.dev6** | Joint distributions, marginals, conditioning, covariance and correlation.<br>Example: `JointFiniteDistribution[{{0,0},{1,1}},{1/2,1/2}]` |
+| **0.2.0.dev7** | Hyperbolic functions and their inverses, with differentiation and integration.<br>Example: `D[Sinh[x],x]` |
+| **0.2.0.dev8** | Complex algebra for small quantum systems: adjoints, tensor products, projectors and partial traces.<br>Example: `Adj[{{1,Imag},{0,1}}]` |
+| **0.2.0.dev9** | Binomial, Poisson, normal, exponential and gamma families; densities, cumulative distributions, generating functions, moments and cumulants.<br>Example: `CDF[NormalDistribution[0,1],0]` |
+| **0.2.0.dev10** | Finite canonical ensembles: degeneracy, mean energy, fluctuations, free energy and heat capacity.<br>Example: `Energy[Canon[{0,1},Log[2]]]` |
+| **0.2.0.dev11** · current | Finite MaxEnt inference: Shannon or KL against a reference, multiple means, active support and saved results.<br>Example: `Probabilities[MaxEnt[{0,1},1/4]]` |
 
 Versions **dev1–dev11** are integrated into the source; they do not yet have
 separate downloads. See the [language reference](docs/en/language.md) for
